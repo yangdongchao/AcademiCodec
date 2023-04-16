@@ -22,7 +22,6 @@ from loss import loss_g, loss_dis, criterion_g, criterion_d
 NODE_RANK = os.environ['INDEX'] if 'INDEX' in os.environ else 0
 NODE_RANK = int(NODE_RANK)
 MASTER_ADDR, MASTER_PORT = (os.environ['CHIEF_IP'], 22275) if 'CHIEF_IP' in os.environ else ("127.0.0.1", 29500)
-#MASTER_ADDR, MASTER_PORT = ("127.0.0.1", 29500)
 MASTER_PORT = int(MASTER_PORT)
 DIST_URL = 'tcp://%s:%s' % (MASTER_ADDR, MASTER_PORT)
 NUM_NODE = os.environ['HOST_NUM'] if 'HOST_NUM' in os.environ else 1
@@ -71,15 +70,15 @@ def get_args():
                         help='batch size')
     parser.add_argument('--PATH', type=str, default='model_path/', 
                         help='model_path')
-    parser.add_argument('--sr', type=int, default=16000, 
+    parser.add_argument('--sr', type=int, default=24000, 
                         help='sample rate')
     parser.add_argument('--print_freq', type=int, default=10, 
                         help='the print number')
     parser.add_argument('--save_dir', type=str, default='log', 
                         help='log save path')
-    parser.add_argument('--train_data_path', type=str, default='', 
+    parser.add_argument('--train_data_path', type=str, default="", 
                         help='training data')
-    parser.add_argument('--valid_data_path', type=str, default='', 
+    parser.add_argument('--valid_data_path', type=list, default="", 
                         help='training data')
     parser.add_argument('--resume', action='store_true', 
                         help='whether re-train model')
@@ -117,7 +116,7 @@ def main_worker(local_rank, args):
     args.distributed = args.world_size > 1
     #CUDA_VISIBLE_DEVICES = int(args.local_rank)
     logger = Logger(args)
-    soundstream = SoundStream(n_filters=32, D=512, ratios=[8, 5, 4, 2]) # 320倍下采
+    soundstream = SoundStream(n_filters=32, D=512, ratios=[2, 2, 2, 4]) # 32倍下采
     print('soundstream ', soundstream)
     # assert 1==2
     stft_disc = MultiScaleSTFTDiscriminator(filters=32)
