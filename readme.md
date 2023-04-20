@@ -41,6 +41,14 @@ https://github.com/yangdongchao/Text-to-sound-Synthesis
 
 ## Citations ##
 If you find this code useful in your research, please cite our work:
+```bib
+@article{yang2023instructtts,
+  title={InstructTTS: Modelling Expressive TTS in Discrete Latent Space with Natural Language Style Prompt},
+  author={Yang, Dongchao and Liu, Songxiang and Huang, Rongjie and Lei, Guangzhi and Weng, Chao and Meng, Helen and Yu, Dong},
+  journal={arXiv preprint arXiv:2301.13662},
+  year={2023}
+}
+```
 
 ## Disclaimer ##
 Note that part of the code is based on Encodec, so that the license should be the same as Encodec. All of our code and pre-trained models can be only used for Academic research (non-commercial).
