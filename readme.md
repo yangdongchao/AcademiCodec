@@ -1,11 +1,11 @@
 # AcademiCodec: An Open Source Audio Codec Model for Academic Research
 
 ### On going
-This project is on going. We will release the our technical reports and all of the code as soon as. <br/>
+This project is on going. We will release the our technical reports and all of the source code as soon as possible. <br/>
 Furthermore, this project is lanched from University, we expect more researchers to be the contributor. <br/>
 
 #### Abstract <wip>
-Audio codec models are widely used in audio communication as a crucial technique for compressing audio into discrete representations. Nowadays, audio codec models are increasingly utilized in generation fields as intermediate representations. For instance, AudioLM is an audio generation model that uses the discrete representation of SoundStream as a training target, while VALL-E employs the Encodec model as an intermediate feature to aid TTS tasks. Despite their usefulness, two challenges persist: (1) training these audio codec models can be difficult due to the lack of publicly available training processes and the need for large-scale data and GPUs; (2) achieving good reconstruction performance requires many codebooks, which increases the burden on generation models. In this study, we propose a group-residual vector quantization (GRVQ) technique and use it to develop a novel \textbf{Hi}gh \textbf{Fi}delity Audio Codec model, HiFi-Codec, which only requires 4 codebooks. We train all the models using publicly available TTS data such as LibriTTS, VCTK, AISHELL, and more, with a total duration of over 1000 hours, using 8 GPUs. Our experimental results show that HiFi-Codec outperforms Encodec in terms of reconstruction performance despite requiring only 4 codebooks. To facilitate research in audio codec and generation, we introduce AcademiCodec, the first open-source audio codec toolkit that offers training codes and pre-trained models for Encodec, SoundStream, and HiFi-Codec.
+Audio codec models are widely used in audio communication as a crucial technique for compressing audio into discrete representations. Nowadays, audio codec models are increasingly utilized in generation fields as intermediate representations. For instance, AudioLM is ann audio generation model that uses the discrete representation of SoundStream as a training target, while VALL-E employs the Encodec model as an intermediate feature to aid TTS tasks. Despite their usefulness, two challenges persist: (1) training these audio codec models can be difficult due to the lack of publicly available training processes and the need for large-scale data and GPUs; (2) achieving good reconstruction performance requires many codebooks, which increases the burden on generation models. In this study, we propose a group-residual vector quantization (GRVQ) technique and use it to develop a novel \textbf{Hi}gh \textbf{Fi}delity Audio Codec model, HiFi-Codec, which only requires 4 codebooks. We train all the models using publicly available TTS data such as LibriTTS, VCTK, AISHELL, and more, with a total duration of over 1000 hours, using 8 GPUs. Our experimental results show that HiFi-Codec outperforms Encodec in terms of reconstruction performance despite requiring only 4 codebooks. To facilitate research in audio codec and generation, we introduce AcademiCodec, the first open-source audio codec toolkit that offers training codes and pre-trained models for Encodec, SoundStream, and HiFi-Codec.
 
 ## 🔥 News
 #### AcademiCodec
@@ -41,6 +41,14 @@ https://github.com/yangdongchao/Text-to-sound-Synthesis <br>
 https://github.com/b04901014/MQTTS
 ## Citations ##
 If you find this code useful in your research, please cite our work:
+```bib
+@article{yang2023instructtts,
+  title={InstructTTS: Modelling Expressive TTS in Discrete Latent Space with Natural Language Style Prompt},
+  author={Yang, Dongchao and Liu, Songxiang and Huang, Rongjie and Lei, Guangzhi and Weng, Chao and Meng, Helen and Yu, Dong},
+  journal={arXiv preprint arXiv:2301.13662},
+  year={2023}
+}
+```
 
 ## Disclaimer ##
 Note that part of the code is based on Encodec, so that the license should be the same as Encodec. All of our code and pre-trained models can be only used for Academic research (non-commercial).
