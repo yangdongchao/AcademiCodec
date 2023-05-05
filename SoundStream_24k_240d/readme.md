@@ -4,6 +4,6 @@
 ### For Training
 set the right path to statr/start.sh
 
-run: bash start.sh
+run: `bash start.sh`
 
 ### For Inference

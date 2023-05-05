@@ -1,7 +1,7 @@
 # AcademiCodec: An Open Source Audio Codec Model for Academic Research
 
 ### On going
-This project is on going. We will release the our technical reports and all of the source code as soon as possible. <br/>
+This project is on going. You can find the paper on https://arxiv.org/pdf/2305.02765.pdf <br/>
 Furthermore, this project is lanched from University, we expect more researchers to be the contributor. <br/>
 
 #### Abstract <wip>

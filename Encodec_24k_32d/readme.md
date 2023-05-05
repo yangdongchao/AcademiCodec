@@ -5,11 +5,11 @@
 ### For Training
 set the right path to statr/start.sh
 
-run: bash start.sh
+`bash start.sh`
 
 ### For Inference
-if you want to use our checkpoint. Run the following 
-mkdir checkpoint
-cd checkpoint
-wget https://huggingface.co/Dongchao/AcademiCodec/resolve/main/encodec_24khz_32d.pth
-bash test.sh    # set the root in test.sh, before runing it.
+if you want to use our checkpoint. Run the following <br>
+`mkdir checkpoint`
+`cd checkpoint`
+`wget https://huggingface.co/Dongchao/AcademiCodec/resolve/main/encodec_24khz_32d.pth`
+`bash test.sh    # set the root in test.sh, before runing it.`
