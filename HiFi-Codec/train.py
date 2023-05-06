@@ -7,6 +7,7 @@ import argparse
 import json
 import torch
 import torch.nn.functional as F
+from torchaudio.transforms import MelSpectrogram
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DistributedSampler, DataLoader
 import torch.multiprocessing as mp
