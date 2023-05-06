@@ -30,6 +30,8 @@ class VQVAE(nn.Module):
 
     def encode(self, x):
         batch_size = x.size(0)
+        if len(x.shape) == 3 and x.shape[-1] == 1:
+            x = x.squeeze(-1)
         c = self.encoder(x.unsqueeze(1))
         q, loss_q, c = self.quantizer(c)
         c = [code.reshape(batch_size, -1) for code in c]
