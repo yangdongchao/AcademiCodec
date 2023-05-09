@@ -94,33 +94,6 @@ def check_clipping2(wav, rescale):
             "To avoid clipping, use the `-r` option to rescale the output.",
             file=sys.stderr)
 
-
-def main():
-    args = get_parser().parse_args()
-    if not args.input.exists():
-        fatal(f"Input file {args.input} does not exist.")
-    # Compression
-    if args.output is None:
-        args.output = args.input.with_suffix(SUFFIX)
-    elif args.output.suffix.lower() not in [SUFFIX, '.wav']:
-        fatal(f"Output extension must be .wav or {SUFFIX}")
-    check_output_exists(args)
-    model = SoundStream(n_filters=32, D=256, ratios=[6, 5, 4, 2])
-    parameter_dict = torch.load(args.resume_path)
-    model.load_state_dict(parameter_dict) # load model
-
-    wav, sr = torchaudio.load(args.input)
-    print('wav:',wav.shape)
-    if sr != 24000:
-        wav = convert_audio(wav, sr, 24000, 1)
-    print('after convertion:',wav.shape)
-    wav = wav.cuda()
-    compressed = soundstream.encode(wav)
-    print('after compression:',compressed.shape)
-    out = soundstream.decode(compressed)
-    check_clipping(out, args)
-    save_audio(out, args.output, 24000, rescale=args.rescale)
-
 def test_one(wav_root, store_root, rescale, args, soundstream):
     #compressing
     wav, sr = torchaudio.load(wav_root)
