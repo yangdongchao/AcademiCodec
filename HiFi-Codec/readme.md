@@ -16,7 +16,7 @@ Then using following command:
 `
 CUDA_VISIBLE_DEVICES=0 python ./vqvae_copy_syn.py \
     --model_path your_ckpts_path \
-    --config_path config16k_320d.json \
+    --config_path config_24k_320d.json \
     --input_wavdir your wave folder \
     --outputdir your output folder \
     --num_gens 10000
