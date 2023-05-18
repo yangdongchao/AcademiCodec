@@ -1,6 +1,3 @@
-# Copyright 2022 Tencent Inc.
-# Author     : shaunxliu 
-# Description: Compute PESQ measure.
 
 import os
 import glob
