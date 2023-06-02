@@ -11,7 +11,8 @@ Audio codec models are widely used in audio communication as a crucial technique
 #### AcademiCodec
 - 2023.4.16: We first release the training code for Encodec and SoundStream and our pre-trained models, includes 24khz and 16khz.
 - 2023.5.5: We release the code of HiFi-Codec.
-
+- 2023.6.2: Add `HiFi-Codec-24k-320d/infer.ipynb`, which can be used to infer acoustic tokens to use for later training of VALL-E, SoundStorm and etc.
+- 
 ### Dependencies
 * [PyTorch](http://pytorch.org/) version >= 1.13.0
 * Python version >= 3.8

@@ -7,7 +7,7 @@ from env import AttrDict
 
 
 class VQVAE(nn.Module):
-    def __init__(self, config_path, ckpt_path, with_encoder=False):
+    def __init__(self, config_path, ckpt_path, with_encoder=False, return_acoustic_tokens_only=False):
         super(VQVAE, self).__init__()
         ckpt = torch.load(ckpt_path)
         with open(config_path) as f:
@@ -21,12 +21,16 @@ class VQVAE(nn.Module):
         if with_encoder:
             self.encoder = Encoder(self.h)
             self.encoder.load_state_dict(ckpt['encoder'])
+        self.return_acoustic_tokens_only = return_acoustic_tokens_only
 
     def forward(self, x):
         # x is the codebook
         # print('x ', x.shape)
         # assert 1==2
-        return self.generator(self.quantizer.embed(x)) # 
+        acoustic_tokens = self.quantizer.embed(x)
+        if self.return_acoustic_tokens_only:
+            return acoustic_tokens
+        return self.generator(acoustic_tokens)
 
     def encode(self, x):
         batch_size = x.size(0)
