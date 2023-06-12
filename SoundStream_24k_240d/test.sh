@@ -1,2 +1,1 @@
-python test.py "GT_path" "save_path" \
-       --resume_path path_to_saved_model
+../Encodec_24k_240d/test.sh
