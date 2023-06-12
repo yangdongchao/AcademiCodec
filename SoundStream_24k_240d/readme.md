@@ -2,7 +2,7 @@
 
 
 ### For Training
-set the right path to statr/start.sh
+set the right path to start.sh
 
 run: `bash start.sh`
 
