@@ -3,8 +3,7 @@
 ### Note that, this part of code is based on Facebook's Encodec. We just provide the training process. The license is the same as Encodec.
 
 ### For Training
-set the right path on statr/start.sh <br>
-
+set the right path to start.sh
 `bash start.sh`
 
 ### For Inference
