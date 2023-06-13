@@ -124,7 +124,7 @@ def test_batch():
     soundstream = SoundStream(n_filters=32, D=512, ratios=[8, 5, 4, 2])
     parameter_dict = torch.load(args.resume_path)
     new_state_dict = OrderedDict()
-    # k 为 module.xxx.weight, v为权重
+    # k 为 module.xxx.weight, v 为权重
     for k, v in parameter_dict.items():
         # 截取`module.`后面的xxx.weight
         name = k[7:]

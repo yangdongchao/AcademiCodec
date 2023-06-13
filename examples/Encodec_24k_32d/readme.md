@@ -9,7 +9,9 @@ set the right path to start.sh
 
 ### For Inference
 if you want to use our checkpoint. Run the following <br>
-`mkdir checkpoint`
-`cd checkpoint`
-`wget https://huggingface.co/Dongchao/AcademiCodec/resolve/main/encodec_24khz_32d.pth`
-`bash test.sh    # set the root in test.sh, before runing it.`
+```bash
+mkdir checkpoint
+cd checkpoint`
+wget https://huggingface.co/Dongchao/AcademiCodec/resolve/main/encodec_24khz_32d.pth
+bash test.sh    # set the root in test.sh, before runing it.
+```

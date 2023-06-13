@@ -20,7 +20,9 @@ python3 main3_ddp.py --BATCH_SIZE 16  --N_EPOCHS 300 \
 
 ### For Inference
 if you want to use our checkpoint. Run the following <br>
-`mkdir checkpoint`
-`cd checkpoint`
-`wget https://huggingface.co/Dongchao/AcademiCodec/resolve/main/encodec_24khz_240d.pth`
-`bash test.sh    # set the root in test.sh, before runing it.`
+```bash
+mkdir checkpoint
+cd checkpoint
+wget https://huggingface.co/Dongchao/AcademiCodec/resolve/main/encodec_24khz_240d.pth
+bash test.sh    # set the root in test.sh, before runing it.
+```
