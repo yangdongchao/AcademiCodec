@@ -15,7 +15,7 @@ from torch.distributed import init_process_group
 from torch.nn.parallel import DistributedDataParallel
 from env import AttrDict, build_env
 from meldataset import MelDataset, mel_spectrogram, get_dataset_filelist
-from msstftd import MultiScaleSTFTDiscriminator
+from academicodec.models.encodec.msstftd import MultiScaleSTFTDiscriminator
 from models import Generator
 from models import MultiPeriodDiscriminator
 from models import MultiScaleDiscriminator
@@ -24,10 +24,10 @@ from models import generator_loss
 from models import discriminator_loss
 from models import Encoder
 from models import Quantizer
-from utils import plot_spectrogram
-from utils import scan_checkpoint
-from utils import load_checkpoint
-from utils import save_checkpoint
+from academicodec.utils import plot_spectrogram
+from academicodec.utils import scan_checkpoint
+from academicodec.utils import load_checkpoint
+from academicodec.utils import save_checkpoint
 
 torch.backends.cudnn.benchmark = True
 

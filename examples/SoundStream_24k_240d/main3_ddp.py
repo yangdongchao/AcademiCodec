@@ -18,8 +18,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
 
 from dataset import NSynthDataset
-from utils import Logger
-from utils import seed_everything
+from academicodec.utils import Logger
+from academicodec.utils import seed_everything
 NODE_RANK = os.environ['INDEX'] if 'INDEX' in os.environ else 0
 NODE_RANK = int(NODE_RANK)
 MASTER_ADDR, MASTER_PORT = (os.environ['CHIEF_IP'],

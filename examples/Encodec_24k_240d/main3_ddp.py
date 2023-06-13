@@ -10,8 +10,8 @@ from academicodec.models.encodec.loss import criterion_g
 from academicodec.models.encodec.loss import loss_dis
 from academicodec.models.encodec.loss import loss_g
 from academicodec.models.encodec.msstftd import MultiScaleSTFTDiscriminator
-from academicodec.models.encodec.utils import Logger
-from academicodec.models.encodec.utils import seed_everything
+from academicodec.utils import Logger
+from academicodec.utils import seed_everything
 from model import Encodec
 from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
