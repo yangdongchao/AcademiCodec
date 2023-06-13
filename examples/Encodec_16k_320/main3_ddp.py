@@ -4,7 +4,7 @@ import time
 
 import torch
 import torch.distributed as dist
-from academicodec.models.encodec.distributed.distributed.launch import launch
+from academicodec.models.encodec.distributed.launch import launch
 from academicodec.models.encodec.msstftd import MultiScaleSTFTDiscriminator
 from academicodec.models.encodec.utils import Logger
 from academicodec.models.encodec.utils import seed_everything
