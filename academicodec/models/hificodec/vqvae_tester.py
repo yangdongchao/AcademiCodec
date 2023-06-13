@@ -18,7 +18,6 @@ class VqvaeTester(nn.Module):
         # 单声道
         # wav.shape (T, ), 按照模型的 sr 读取
         wav, sr = librosa.load(wav_path, sr=self.sample_rate)
-        print("sr:", sr)
         fid = os.path.basename(wav_path)[:-4]
         wav = normalize(wav) * 0.95
         wav = torch.FloatTensor(wav).unsqueeze(0)

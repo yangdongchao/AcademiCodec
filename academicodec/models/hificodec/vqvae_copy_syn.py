@@ -43,7 +43,6 @@ if __name__ == '__main__':
     print(f"Globbed {len(wav_paths)} wav files.")
 
     for wav_path in wav_paths:
-        print("wav_path:",wav_path)
         fid, wav = model(wav_path)
         wav = wav.squeeze().cpu().numpy()
         sf.write(
