@@ -1,6 +1,1 @@
-#!/bin/bash
-export MAIN_ROOT=`realpath ${PWD}/../../`
-
-export PYTHONPATH=${MAIN_ROOT}:${PYTHONPATH}
-
-
+../Encodec_24k_32d/path.sh

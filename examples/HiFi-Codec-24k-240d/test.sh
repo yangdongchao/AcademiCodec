@@ -1,7 +1,6 @@
 #!/bin/bash
 source path.sh
 
-log_root="logs"
 ckpt=checkpoint/HiFi-Codec-24k-240d
 echo checkpoint path: ${ckpt}
 

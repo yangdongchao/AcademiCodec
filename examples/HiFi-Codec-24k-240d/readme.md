@@ -8,7 +8,7 @@ bash start.sh
 ## How to Inference
 ```bash
 mkdir checkpoint
-cd checkpoint`
+cd checkpoint
 wget https://huggingface.co/Dongchao/AcademiCodec/resolve/main/HiFi-Codec-24k-240d
 bash test.sh
 ```
