@@ -31,8 +31,6 @@ class VQVAE(nn.Module):
 
     def forward(self, x):
         # x is the codebook
-        # print('x ', x.shape)
-        # assert 1==2
         acoustic_tokens = self.quantizer.embed(x)
         if self.return_acoustic_tokens_only:
             return acoustic_tokens

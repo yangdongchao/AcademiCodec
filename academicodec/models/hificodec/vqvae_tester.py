@@ -1,7 +1,6 @@
 import os
 
 import librosa
-import soundfile as sf
 import torch
 import torch.nn as nn
 from librosa.util import normalize
@@ -16,22 +15,21 @@ class VqvaeTester(nn.Module):
 
     @torch.no_grad()
     def forward(self, wav_path):
-        wav, sr = sf.read(wav_path)
-        if sr != self.sample_rate:
-            wav = librosa.resample(wav, orig_sr=sr, target_sr=self.sample_rate)
+        # 单声道
+        # wav.shape (T, ), 按照模型的 sr 读取
+        wav, sr = librosa.load(wav_path, sr=self.sample_rate)
+        print("sr:", sr)
         fid = os.path.basename(wav_path)[:-4]
         wav = normalize(wav) * 0.95
         wav = torch.FloatTensor(wav).unsqueeze(0)
         wav = wav.to(torch.device('cuda'))
-        vq_codes = self.vqvae.encode(wav)  # 
+        vq_codes = self.vqvae.encode(wav)
         syn = self.vqvae(vq_codes)
         return fid, syn
 
     @torch.no_grad()
     def vq(self, wav_path):
-        wav, sr = sf.read(wav_path)
-        if sr != self.sample_rate:
-            wav = librosa.resample(wav, orig_sr=sr, target_sr=self.sample_rate)
+        wav, sr = librosa.load(wav_path, sr=self.sample_rate)
         fid = os.path.basename(wav_path)[:-4]
         wav = normalize(wav) * 0.95
         wav = torch.FloatTensor(wav).unsqueeze(0)

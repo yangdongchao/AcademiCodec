@@ -32,7 +32,7 @@ with open(args.config_path, 'r') as f:
 if __name__ == '__main__':
     Path(args.outputdir).mkdir(parents=True, exist_ok=True)
     print("Init model and load weights")
-    model = VqvaeTester(args)
+    model = VqvaeTester(config_path=args.config_path, model_path=args.model_path,sample_rate=args.sample_rate)
     model.cuda()
     model.vqvae.generator.remove_weight_norm()
     model.vqvae.encoder.remove_weight_norm()
@@ -42,7 +42,8 @@ if __name__ == '__main__':
     wav_paths = glob.glob(f"{args.input_wavdir}/*.wav")[:args.num_gens]
     print(f"Globbed {len(wav_paths)} wav files.")
 
-    for wav_path in tqdm(wav_paths):
+    for wav_path in wav_paths:
+        print("wav_path:",wav_path)
         fid, wav = model(wav_path)
         wav = wav.squeeze().cpu().numpy()
         sf.write(
