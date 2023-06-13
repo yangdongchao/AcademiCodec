@@ -3,9 +3,7 @@
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-
 """Torch distributed utilities."""
-
 import typing as tp
 
 import torch
@@ -44,16 +42,18 @@ def _check_number_of_params(params: tp.List[torch.Tensor]):
     if not is_distributed() or not params:
         return
     #print('params[0].device ', params[0].device)
-    tensor = torch.tensor([len(params)], device=params[0].device, dtype=torch.long)
+    tensor = torch.tensor(
+        [len(params)], device=params[0].device, dtype=torch.long)
     all_reduce(tensor)
     if tensor.item() != len(params) * world_size():
         # If not all the workers have the same number, for at least one of them,
         # this inequality will be verified.
-        raise RuntimeError(f"Mismatch in number of params: ours is {len(params)}, "
-                           "at least one worker has a different one.")
+        raise RuntimeError(
+            f"Mismatch in number of params: ours is {len(params)}, "
+            "at least one worker has a different one.")
 
 
-def broadcast_tensors(tensors: tp.Iterable[torch.Tensor], src: int = 0):
+def broadcast_tensors(tensors: tp.Iterable[torch.Tensor], src: int=0):
     """Broadcast the tensors from the given parameters to all workers.
     This can be used to ensure that all workers have the same model to start with.
     """
@@ -64,7 +64,8 @@ def broadcast_tensors(tensors: tp.Iterable[torch.Tensor], src: int = 0):
     handles = []
     for tensor in tensors:
         # src = int(rank()) # added code
-        handle = torch.distributed.broadcast(tensor.data, src=src, async_op=True)
+        handle = torch.distributed.broadcast(
+            tensor.data, src=src, async_op=True)
         handles.append(handle)
     for handle in handles:
         handle.wait()
@@ -81,7 +82,9 @@ def sync_buffer(buffers, average=True):
         if torch.is_floating_point(buffer.data):
             if average:
                 handle = torch.distributed.all_reduce(
-                    buffer.data, op=torch.distributed.ReduceOp.SUM, async_op=True)
+                    buffer.data,
+                    op=torch.distributed.ReduceOp.SUM,
+                    async_op=True)
             else:
                 handle = torch.distributed.broadcast(
                     buffer.data, src=0, async_op=True)
@@ -119,7 +122,8 @@ def average_metrics(metrics: tp.Dict[str, float], count=1.):
         return metrics
     keys, values = zip(*metrics.items())
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    tensor = torch.tensor(list(values) + [1], device=device, dtype=torch.float32)
+    tensor = torch.tensor(
+        list(values) + [1], device=device, dtype=torch.float32)
     tensor *= count
     all_reduce(tensor)
     averaged = (tensor[:-1] / tensor[-1]).cpu().tolist()

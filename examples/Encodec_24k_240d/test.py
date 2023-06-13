@@ -13,6 +13,7 @@ from pathlib import Path
 
 import torch
 import torchaudio
+# 这里用的是 Encodec 但是好像和 Encodec_16k_320 用的 SoundStream 是一样的
 from model import Encodec
 
 

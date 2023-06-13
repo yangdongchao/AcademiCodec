@@ -3,26 +3,24 @@
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-
 """MS-STFT discriminator, provided here for reference."""
-
 import typing as tp
 
-import torchaudio
 import torch
-from torch import nn
+import torchaudio
 from einops import rearrange
-
 from modules import NormConv2d
-
+from torch import nn
 
 FeatureMapType = tp.List[torch.Tensor]
 LogitsType = torch.Tensor
 DiscriminatorOutput = tp.Tuple[tp.List[LogitsType], tp.List[FeatureMapType]]
 
 
-def get_2d_padding(kernel_size: tp.Tuple[int, int], dilation: tp.Tuple[int, int] = (1, 1)):
-    return (((kernel_size[0] - 1) * dilation[0]) // 2, ((kernel_size[1] - 1) * dilation[1]) // 2)
+def get_2d_padding(kernel_size: tp.Tuple[int, int],
+                   dilation: tp.Tuple[int, int]=(1, 1)):
+    return (((kernel_size[0] - 1) * dilation[0]) // 2, (
+        (kernel_size[1] - 1) * dilation[1]) // 2)
 
 
 class DiscriminatorSTFT(nn.Module):
@@ -43,11 +41,23 @@ class DiscriminatorSTFT(nn.Module):
         activation_params (dict): Parameters to provide to the activation function.
         growth (int): Growth factor for the filters. Default: 1
     """
-    def __init__(self, filters: int, in_channels: int = 1, out_channels: int = 1,
-                 n_fft: int = 1024, hop_length: int = 256, win_length: int = 1024, max_filters: int = 1024,
-                 filters_scale: int = 1, kernel_size: tp.Tuple[int, int] = (3, 9), dilations: tp.List = [1, 2, 4],
-                 stride: tp.Tuple[int, int] = (1, 2), normalized: bool = True, norm: str = 'weight_norm',
-                 activation: str = 'LeakyReLU', activation_params: dict = {'negative_slope': 0.2}):
+
+    def __init__(self,
+                 filters: int,
+                 in_channels: int=1,
+                 out_channels: int=1,
+                 n_fft: int=1024,
+                 hop_length: int=256,
+                 win_length: int=1024,
+                 max_filters: int=1024,
+                 filters_scale: int=1,
+                 kernel_size: tp.Tuple[int, int]=(3, 9),
+                 dilations: tp.List=[1, 2, 4],
+                 stride: tp.Tuple[int, int]=(1, 2),
+                 normalized: bool=True,
+                 norm: str='weight_norm',
+                 activation: str='LeakyReLU',
+                 activation_params: dict={'negative_slope': 0.2}):
         super().__init__()
         assert len(kernel_size) == 2
         assert len(stride) == 2
@@ -60,28 +70,50 @@ class DiscriminatorSTFT(nn.Module):
         self.normalized = normalized
         self.activation = getattr(torch.nn, activation)(**activation_params)
         self.spec_transform = torchaudio.transforms.Spectrogram(
-            n_fft=self.n_fft, hop_length=self.hop_length, win_length=self.win_length, window_fn=torch.hann_window,
-            normalized=self.normalized, center=False, pad_mode=None, power=None)
+            n_fft=self.n_fft,
+            hop_length=self.hop_length,
+            win_length=self.win_length,
+            window_fn=torch.hann_window,
+            normalized=self.normalized,
+            center=False,
+            pad_mode=None,
+            power=None)
         spec_channels = 2 * self.in_channels
         self.convs = nn.ModuleList()
         self.convs.append(
-            NormConv2d(spec_channels, self.filters, kernel_size=kernel_size, padding=get_2d_padding(kernel_size))
-        )
+            NormConv2d(
+                spec_channels,
+                self.filters,
+                kernel_size=kernel_size,
+                padding=get_2d_padding(kernel_size)))
         in_chs = min(filters_scale * self.filters, max_filters)
         for i, dilation in enumerate(dilations):
-            out_chs = min((filters_scale ** (i + 1)) * self.filters, max_filters)
-            self.convs.append(NormConv2d(in_chs, out_chs, kernel_size=kernel_size, stride=stride,
-                                         dilation=(dilation, 1), padding=get_2d_padding(kernel_size, (dilation, 1)),
-                                         norm=norm))
+            out_chs = min((filters_scale**(i + 1)) * self.filters, max_filters)
+            self.convs.append(
+                NormConv2d(
+                    in_chs,
+                    out_chs,
+                    kernel_size=kernel_size,
+                    stride=stride,
+                    dilation=(dilation, 1),
+                    padding=get_2d_padding(kernel_size, (dilation, 1)),
+                    norm=norm))
             in_chs = out_chs
-        out_chs = min((filters_scale ** (len(dilations) + 1)) * self.filters, max_filters)
-        self.convs.append(NormConv2d(in_chs, out_chs, kernel_size=(kernel_size[0], kernel_size[0]),
-                                     padding=get_2d_padding((kernel_size[0], kernel_size[0])),
-                                     norm=norm))
-        self.conv_post = NormConv2d(out_chs, self.out_channels,
-                                    kernel_size=(kernel_size[0], kernel_size[0]),
-                                    padding=get_2d_padding((kernel_size[0], kernel_size[0])),
-                                    norm=norm)
+        out_chs = min((filters_scale**(len(dilations) + 1)) * self.filters,
+                      max_filters)
+        self.convs.append(
+            NormConv2d(
+                in_chs,
+                out_chs,
+                kernel_size=(kernel_size[0], kernel_size[0]),
+                padding=get_2d_padding((kernel_size[0], kernel_size[0])),
+                norm=norm))
+        self.conv_post = NormConv2d(
+            out_chs,
+            self.out_channels,
+            kernel_size=(kernel_size[0], kernel_size[0]),
+            padding=get_2d_padding((kernel_size[0], kernel_size[0])),
+            norm=norm)
 
     def forward(self, x: torch.Tensor):
         fmap = []
@@ -112,15 +144,26 @@ class MultiScaleSTFTDiscriminator(nn.Module):
         win_lengths (Sequence[int]): Window size for each scale
         **kwargs: additional args for STFTDiscriminator
     """
-    def __init__(self, filters: int, in_channels: int = 1, out_channels: int = 1,
-                 n_ffts: tp.List[int] = [1024, 2048, 512, 256, 128], hop_lengths: tp.List[int] = [256, 512, 128, 64, 32],
-                 win_lengths: tp.List[int] = [1024, 2048, 512, 256, 128], **kwargs):
+
+    def __init__(self,
+                 filters: int,
+                 in_channels: int=1,
+                 out_channels: int=1,
+                 n_ffts: tp.List[int]=[1024, 2048, 512, 256, 128],
+                 hop_lengths: tp.List[int]=[256, 512, 128, 64, 32],
+                 win_lengths: tp.List[int]=[1024, 2048, 512, 256, 128],
+                 **kwargs):
         super().__init__()
         assert len(n_ffts) == len(hop_lengths) == len(win_lengths)
         self.discriminators = nn.ModuleList([
-            DiscriminatorSTFT(filters, in_channels=in_channels, out_channels=out_channels,
-                              n_fft=n_ffts[i], win_length=win_lengths[i], hop_length=hop_lengths[i], **kwargs)
-            for i in range(len(n_ffts))
+            DiscriminatorSTFT(
+                filters,
+                in_channels=in_channels,
+                out_channels=out_channels,
+                n_fft=n_ffts[i],
+                win_length=win_lengths[i],
+                hop_length=hop_lengths[i],
+                **kwargs) for i in range(len(n_ffts))
         ])
         self.num_discriminators = len(self.discriminators)
 
@@ -141,10 +184,12 @@ def test():
 
     y_disc_r, fmap_r = disc(y)
     y_disc_gen, fmap_gen = disc(y_hat)
-    assert len(y_disc_r) == len(y_disc_gen) == len(fmap_r) == len(fmap_gen) == disc.num_discriminators
+    assert len(y_disc_r) == len(y_disc_gen) == len(fmap_r) == len(
+        fmap_gen) == disc.num_discriminators
 
     assert all([len(fm) == 5 for fm in fmap_r + fmap_gen])
-    assert all([list(f.shape)[:2] == [1, 32] for fm in fmap_r + fmap_gen for f in fm])
+    assert all(
+        [list(f.shape)[:2] == [1, 32] for fm in fmap_r + fmap_gen for f in fm])
     assert all([len(logits.shape) == 4 for logits in y_disc_r + y_disc_gen])
 
 

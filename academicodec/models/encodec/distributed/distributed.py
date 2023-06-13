@@ -2,13 +2,11 @@
 # Diffsound
 # code based https://github.com/cientgu/VQ-Diffusion
 # ------------------------------------------
-import math
 import pickle
 
 import torch
 from torch import distributed as dist
 from torch.utils import data
-
 
 LOCAL_PROCESS_GROUP = None
 
@@ -98,10 +96,10 @@ def all_gather(data):
 
     tensor_list = []
     for _ in size_list:
-        tensor_list.append(torch.ByteTensor(size=(max_size,)).to("cuda"))
+        tensor_list.append(torch.ByteTensor(size=(max_size, )).to("cuda"))
 
     if local_size != max_size:
-        padding = torch.ByteTensor(size=(max_size - local_size,)).to("cuda")
+        padding = torch.ByteTensor(size=(max_size - local_size, )).to("cuda")
         tensor = torch.cat((tensor, padding), 0)
 
     dist.all_gather(tensor_list, tensor)

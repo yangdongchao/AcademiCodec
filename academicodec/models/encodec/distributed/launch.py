@@ -2,14 +2,13 @@
 # Diffsound
 # code based https://github.com/cientgu/VQ-Diffusion
 # ------------------------------------------
-import os
-
+import distributed.distributed as dist_fn
 import torch
 from torch import distributed as dist
 from torch import multiprocessing as mp
 
 # import distributed as dist_fn
-import distributed.distributed as dist_fn
+
 
 def find_free_port():
     import socket
@@ -23,7 +22,12 @@ def find_free_port():
     return port
 
 
-def launch(fn, n_gpu_per_machine, n_machine=1, machine_rank=0, dist_url=None, args=()):
+def launch(fn,
+           n_gpu_per_machine,
+           n_machine=1,
+           machine_rank=0,
+           dist_url=None,
+           args=()):
     world_size = n_machine * n_gpu_per_machine
 
     if world_size > 1:
@@ -31,7 +35,8 @@ def launch(fn, n_gpu_per_machine, n_machine=1, machine_rank=0, dist_url=None, ar
         #     os.environ["OMP_NUM_THREADS"] = "1"
         if dist_url == "auto":
             if n_machine != 1:
-                raise ValueError('dist_url="auto" not supported in multi-machine jobs')
+                raise ValueError(
+                    'dist_url="auto" not supported in multi-machine jobs')
             port = find_free_port()
             dist_url = f"tcp://127.0.0.1:{port}"
         print('dist_url ', dist_url)
@@ -47,35 +52,33 @@ def launch(fn, n_gpu_per_machine, n_machine=1, machine_rank=0, dist_url=None, ar
         mp.spawn(
             distributed_worker,
             nprocs=n_gpu_per_machine,
-            args=(fn, world_size, n_gpu_per_machine, machine_rank, dist_url, args), 
-            daemon=False,
-        )
+            args=(fn, world_size, n_gpu_per_machine, machine_rank, dist_url,
+                  args),
+            daemon=False, )
         # n_machine ? world_size
     else:
         local_rank = 0
         fn(local_rank, *args)
 
 
-def distributed_worker(
-    local_rank, fn, world_size, n_gpu_per_machine, machine_rank, dist_url, args
-):
+def distributed_worker(local_rank, fn, world_size, n_gpu_per_machine,
+                       machine_rank, dist_url, args):
     if not torch.cuda.is_available():
         raise OSError("CUDA is not available. Please check your environments")
 
     global_rank = machine_rank * n_gpu_per_machine + local_rank
-    print('local_rank ',local_rank)
-    print('global_rank ',global_rank)
+    print('local_rank ', local_rank)
+    print('global_rank ', global_rank)
     try:
         dist.init_process_group(
             backend="NCCL",
             init_method=dist_url,
             world_size=world_size,
-            rank=global_rank,
-        )
+            rank=global_rank, )
 
     except Exception:
         raise OSError("failed to initialize NCCL groups")
-    
+
     # changed
     dist_fn.synchronize()
 
@@ -90,10 +93,11 @@ def distributed_worker(
         raise ValueError("torch.distributed.LOCAL_PROCESS_GROUP is not None")
 
     # change paert
-    
+
     n_machine = world_size // n_gpu_per_machine
     for i in range(n_machine):
-        ranks_on_i = list(range(i * n_gpu_per_machine, (i + 1) * n_gpu_per_machine))
+        ranks_on_i = list(
+            range(i * n_gpu_per_machine, (i + 1) * n_gpu_per_machine))
         pg = dist.new_group(ranks_on_i)
 
         if i == machine_rank:
