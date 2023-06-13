@@ -1,18 +1,18 @@
-import importlib
+import json
 import random
-import numpy as np
-import torch
+import sys
+import time
 import warnings
-import os
+
+import numpy as np
+import yaml
+from torch import distributed as dist
+
 # from __future__ import absolute_import
 # from __future__ import division
 # from __future__ import print_function
-import time
-import torch.utils.tensorboard as tensorboard
-from torch import distributed as dist
-import sys
-import yaml
-import json
+
+
 def seed_everything(seed, cudnn_deterministic=False):
     """
     Function that sets seed for pseudo-random number generators in:
@@ -36,8 +36,10 @@ def seed_everything(seed, cudnn_deterministic=False):
                       'You may see unexpected behavior when restarting '
                       'from checkpoints.')
 
+
 def is_primary():
     return get_rank() == 0
+
 
 def get_rank():
     if not dist.is_available():
@@ -47,10 +49,12 @@ def get_rank():
 
     return dist.get_rank()
 
+
 def load_yaml_config(path):
     with open(path) as f:
         config = yaml.full_load(f)
     return config
+
 
 def save_config_to_yaml(config, path):
     assert path.endswith('.yaml')
@@ -58,17 +62,22 @@ def save_config_to_yaml(config, path):
         f.write(yaml.dump(config))
         f.close()
 
+
 def save_dict_to_json(d, path, indent=None):
     json.dump(d, open(path, 'w'), indent=indent)
+
 
 def load_dict_from_json(path):
     return json.load(open(path, 'r'))
 
+
 def write_args(args, path):
-    args_dict = dict((name, getattr(args, name)) for name in dir(args)if not name.startswith('_'))
+    args_dict = dict((name, getattr(args, name)) for name in dir(args)
+                     if not name.startswith('_'))
     with open(path, 'a') as args_file:
         args_file.write('==> torch version: {}\n'.format(torch.__version__))
-        args_file.write('==> cudnn version: {}\n'.format(torch.backends.cudnn.version()))
+        args_file.write(
+            '==> cudnn version: {}\n'.format(torch.backends.cudnn.version()))
         args_file.write('==> Cmd:\n')
         args_file.write(str(sys.argv))
         args_file.write('\n==> args:\n')
@@ -76,15 +85,16 @@ def write_args(args, path):
             args_file.write('  %s: %s\n' % (str(k), str(v)))
         args_file.close()
 
+
 class Logger(object):
     def __init__(self, args):
         self.args = args
         self.save_dir = args.save_dir
         self.is_primary = is_primary()
-        
+
         if self.is_primary:
             os.makedirs(self.save_dir, exist_ok=True)
-            
+
             # save the args and config
             self.config_dir = os.path.join(self.save_dir, 'configs')
             os.makedirs(self.config_dir, exist_ok=True)
@@ -94,17 +104,20 @@ class Logger(object):
             log_dir = os.path.join(self.save_dir, 'logs')
             if not os.path.exists(log_dir):
                 os.makedirs(log_dir, exist_ok=True)
-            self.text_writer = open(os.path.join(log_dir, 'log.txt'), 'a') # 'w')
+            self.text_writer = open(os.path.join(log_dir, 'log.txt'),
+                                    'a')  # 'w')
             if args.tensorboard:
                 self.log_info('using tensorboard')
-                self.tb_writer = torch.utils.tensorboard.SummaryWriter(log_dir=log_dir) # tensorboard.SummaryWriter(log_dir=log_dir)
+                self.tb_writer = torch.utils.tensorboard.SummaryWriter(
+                    log_dir=log_dir
+                )  # tensorboard.SummaryWriter(log_dir=log_dir)
             else:
                 self.tb_writer = None
-            
 
     def save_config(self, config):
         if self.is_primary:
-            save_config_to_yaml(config, os.path.join(self.config_dir, 'config.yaml'))
+            save_config_to_yaml(config,
+                                os.path.join(self.config_dir, 'config.yaml'))
 
     def log_info(self, info, check_primary=True):
         if self.is_primary or (not check_primary):
@@ -142,7 +155,6 @@ class Logger(object):
             if self.tb_writer is not None:
                 self.tb_writer.add_images(**kargs)
 
-
     def close(self):
         if self.is_primary:
             self.text_writer.close()
@@ -162,8 +174,8 @@ import pathlib
 
 def plot_spectrogram(spectrogram):
     fig, ax = plt.subplots(figsize=(10, 2))
-    im = ax.imshow(spectrogram, aspect="auto", origin="lower",
-                   interpolation='none')
+    im = ax.imshow(
+        spectrogram, aspect="auto", origin="lower", interpolation='none')
     plt.colorbar(im, ax=ax)
 
     fig.canvas.draw()
@@ -185,7 +197,7 @@ def apply_weight_norm(m):
 
 
 def get_padding(kernel_size, dilation=1):
-    return int((kernel_size*dilation - dilation)/2)
+    return int((kernel_size * dilation - dilation) / 2)
 
 
 def load_checkpoint(filepath, device):
@@ -212,4 +224,3 @@ def scan_checkpoint(cp_dir, prefix):
     if len(cp_list) == 0:
         return None
     return sorted(cp_list)[-1]
-

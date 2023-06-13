@@ -1,35 +1,46 @@
 import torch
-import torch.nn.functional as F
 import torch.nn as nn
-from torch.nn import Conv1d, ConvTranspose1d, AvgPool1d, Conv2d
-from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
-from modules import (
-    SConv1d,
-    SConvTranspose1d,
-    SLSTM,
-    NormConv1d,
-    NormConv2d
-)
-try:
-    from utils import init_weights, get_padding
-except:
-    from .utils import init_weights, get_padding
+import torch.nn.functional as F
+from modules import NormConv1d
+from modules import NormConv2d
+from torch.nn import AvgPool1d
+from torch.nn.utils import spectral_norm
+from torch.nn.utils import weight_norm
+
+from utils import get_padding
 
 LRELU_SLOPE = 0.1
 
 
 class DiscriminatorP(torch.nn.Module):
-    def __init__(self, period, kernel_size=5, stride=3, use_spectral_norm=False,
-                 activation: str = 'LeakyReLU', activation_params: dict = {'negative_slope': 0.2}):
+    def __init__(self,
+                 period,
+                 kernel_size=5,
+                 stride=3,
+                 use_spectral_norm=False,
+                 activation: str='LeakyReLU',
+                 activation_params: dict={'negative_slope': 0.2}):
         super(DiscriminatorP, self).__init__()
         self.period = period
-        norm_f = weight_norm if use_spectral_norm == False else spectral_norm
+        norm_f = weight_norm if use_spectral_norm is False else spectral_norm
         self.activation = getattr(torch.nn, activation)(**activation_params)
         self.convs = nn.ModuleList([
-            NormConv2d(1, 32, (kernel_size, 1), (stride, 1), padding=(get_padding(5, 1), 0)),
-            NormConv2d(32, 32, (kernel_size, 1), (stride, 1), padding=(get_padding(5, 1), 0)),
-            NormConv2d(32, 32, (kernel_size, 1), (stride, 1), padding=(get_padding(5, 1), 0)),
-            NormConv2d(32, 32, (kernel_size, 1), (stride, 1), padding=(get_padding(5, 1), 0)),
+            NormConv2d(
+                1,
+                32, (kernel_size, 1), (stride, 1),
+                padding=(get_padding(5, 1), 0)),
+            NormConv2d(
+                32,
+                32, (kernel_size, 1), (stride, 1),
+                padding=(get_padding(5, 1), 0)),
+            NormConv2d(
+                32,
+                32, (kernel_size, 1), (stride, 1),
+                padding=(get_padding(5, 1), 0)),
+            NormConv2d(
+                32,
+                32, (kernel_size, 1), (stride, 1),
+                padding=(get_padding(5, 1), 0)),
             NormConv2d(32, 32, (kernel_size, 1), 1, padding=(2, 0)),
         ])
         self.conv_post = NormConv2d(32, 1, (3, 1), 1, padding=(1, 0))
@@ -38,7 +49,7 @@ class DiscriminatorP(torch.nn.Module):
         fmap = []
         # 1d to 2d
         b, c, t = x.shape
-        if t % self.period != 0: # pad first
+        if t % self.period != 0:  # pad first
             n_pad = self.period - (t % self.period)
             x = F.pad(x, (0, n_pad), "reflect")
             t = t + n_pad
@@ -80,9 +91,12 @@ class MultiPeriodDiscriminator(torch.nn.Module):
             fmap_gs.append(fmap_g)
         return y_d_rs, y_d_gs, fmap_rs, fmap_gs
 
+
 class DiscriminatorS(torch.nn.Module):
-    def __init__(self, use_spectral_norm=False,
-                activation: str = 'LeakyReLU', activation_params: dict = {'negative_slope': 0.2}):
+    def __init__(self,
+                 use_spectral_norm=False,
+                 activation: str='LeakyReLU',
+                 activation_params: dict={'negative_slope': 0.2}):
         super(DiscriminatorS, self).__init__()
         self.activation = getattr(torch.nn, activation)(**activation_params)
         self.convs = nn.ModuleList([
@@ -116,10 +130,8 @@ class MultiScaleDiscriminator(torch.nn.Module):
             DiscriminatorS(),
             DiscriminatorS(),
         ])
-        self.meanpools = nn.ModuleList([
-            AvgPool1d(4, 2, padding=2),
-            AvgPool1d(4, 2, padding=2)
-        ])
+        self.meanpools = nn.ModuleList(
+            [AvgPool1d(4, 2, padding=2), AvgPool1d(4, 2, padding=2)])
 
     def forward(self, y, y_hat):
         y_d_rs = []
@@ -128,8 +140,8 @@ class MultiScaleDiscriminator(torch.nn.Module):
         fmap_gs = []
         for i, d in enumerate(self.discriminators):
             if i != 0:
-                y = self.meanpools[i-1](y)
-                y_hat = self.meanpools[i-1](y_hat)
+                y = self.meanpools[i - 1](y)
+                y_hat = self.meanpools[i - 1](y_hat)
             y_d_r, fmap_r = d(y)
             y_d_g, fmap_g = d(y_hat)
             y_d_rs.append(y_d_r)
