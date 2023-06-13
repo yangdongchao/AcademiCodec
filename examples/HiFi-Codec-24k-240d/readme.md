@@ -20,4 +20,6 @@ CUDA_VISIBLE_DEVICES=0 python ./vqvae_copy_syn.py \
     --input_wavdir your wave folder \
     --outputdir your output folder \
     --num_gens 10000
+
 `
+HiFi-Codec-24k-240d

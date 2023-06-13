@@ -1,11 +1,12 @@
 import argparse
-import soundfile as sf
+import glob
+import json
 import os
 from pathlib import Path
-import json
-import glob
+
+import soundfile as sf
 from tqdm import tqdm
-from vqvae_tester import  VqvaeTester
+from vqvae_tester import VqvaeTester
 
 parser = argparse.ArgumentParser()
 
@@ -28,7 +29,6 @@ with open(args.config_path, 'r') as f:
     argdict.update(args.__dict__)
     args.__dict__ = argdict
 
-
 if __name__ == '__main__':
     Path(args.outputdir).mkdir(parents=True, exist_ok=True)
     print("Init model and load weights")
@@ -38,11 +38,12 @@ if __name__ == '__main__':
     model.vqvae.encoder.remove_weight_norm()
     model.eval()
     print("Model ready")
-    
+
     wav_paths = glob.glob(f"{args.input_wavdir}/*.wav")[:args.num_gens]
     print(f"Globbed {len(wav_paths)} wav files.")
 
     for wav_path in tqdm(wav_paths):
         fid, wav = model(wav_path)
         wav = wav.squeeze().cpu().numpy()
-        sf.write(os.path.join(args.outputdir, f'{fid}.wav'), wav, args.sample_rate)
+        sf.write(
+            os.path.join(args.outputdir, f'{fid}.wav'), wav, args.sample_rate)

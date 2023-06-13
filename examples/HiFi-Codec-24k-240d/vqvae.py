@@ -1,13 +1,19 @@
-import torch
-import torch.nn as nn
 import json
 
-from models import Generator, Quantizer, Encoder
+import torch
+import torch.nn as nn
 from env import AttrDict
+from models import Encoder
+from models import Generator
+from models import Quantizer
 
 
 class VQVAE(nn.Module):
-    def __init__(self, config_path, ckpt_path, with_encoder=False, return_acoustic_tokens_only=False):
+    def __init__(self,
+                 config_path,
+                 ckpt_path,
+                 with_encoder=False,
+                 return_acoustic_tokens_only=False):
         super(VQVAE, self).__init__()
         ckpt = torch.load(ckpt_path)
         with open(config_path) as f:
@@ -41,4 +47,4 @@ class VQVAE(nn.Module):
         c = [code.reshape(batch_size, -1) for code in c]
         # print(torch.stack(c,-1).shape)
         # assert 1==2
-        return torch.stack(c, -1) #N, T, 4
+        return torch.stack(c, -1)  #N, T, 4
