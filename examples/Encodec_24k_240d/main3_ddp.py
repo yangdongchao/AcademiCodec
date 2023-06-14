@@ -12,13 +12,13 @@ from academicodec.models.encodec.loss import loss_g
 from academicodec.models.encodec.msstftd import MultiScaleSTFTDiscriminator
 from academicodec.utils import Logger
 from academicodec.utils import seed_everything
-# 其他两个以及 SoundStream_24k_240d 都是 from net3 import SoundStream
-# 但是这个文件和 SoundStream_24k_240d/net3.py 只是类命名不同
-from model import Encodec
+from net3 import SoundStream
 from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
 
 from dataset import NSynthDataset
+# 其他两个以及 SoundStream_24k_240d 都是 from net3 import SoundStream
+# 但是这个文件和 SoundStream_24k_240d/net3.py 只是类命名不同
 NODE_RANK = os.environ['INDEX'] if 'INDEX' in os.environ else 0
 NODE_RANK = int(NODE_RANK)
 MASTER_ADDR, MASTER_PORT = (os.environ['CHIEF_IP'],
@@ -176,18 +176,20 @@ def main_worker(local_rank, args):
     args.distributed = args.world_size > 1
     #CUDA_VISIBLE_DEVICES = int(args.local_rank)
     logger = Logger(args)
-    encodec = Encodec(n_filters=32, D=512, ratios=[6, 5, 4, 2])  # 
+    soundstream = SoundStream(n_filters=32, D=512, ratios=[6, 5, 4, 2])  # 
     stft_disc = MultiScaleSTFTDiscriminator(filters=32)
     if args.distributed:
-        encodec = torch.nn.SyncBatchNorm.convert_sync_batchnorm(encodec)
+        soundstream = torch.nn.SyncBatchNorm.convert_sync_batchnorm(soundstream)
         stft_disc = torch.nn.SyncBatchNorm.convert_sync_batchnorm(stft_disc)
     # torch.distributed.barrier()
     args.device = torch.device('cuda', args.local_rank)
-    encodec.to(args.device)
+    soundstream.to(args.device)
     stft_disc.to(args.device)
     if args.distributed:
-        encodec = DDP(
-            encodec, device_ids=[args.local_rank], find_unused_parameters=True
+        soundstream = DDP(
+            soundstream,
+            device_ids=[args.local_rank],
+            find_unused_parameters=True
         )  # device_ids=[args.local_rank], output_device=args.local_rank
         stft_disc = DDP(stft_disc,
                         device_ids=[args.local_rank],
@@ -214,7 +216,7 @@ def main_worker(local_rank, args):
         num_workers=8,
         sampler=valid_sampler)
     optimizer_g = torch.optim.AdamW(
-        encodec.parameters(), lr=3e-4, betas=(0.5, 0.9))
+        soundstream.parameters(), lr=3e-4, betas=(0.5, 0.9))
     lr_scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
         optimizer_g, gamma=0.999)
     optimizer_d = torch.optim.AdamW(
@@ -224,23 +226,24 @@ def main_worker(local_rank, args):
     if args.resume:
         latest_info = torch.load(args.resume_path + '/latest.pth')
         args.st_epoch = latest_info['epoch']
-        encodec.load_state_dict(latest_info['encodec'])
+        # 这里需要注意下
+        soundstream.load_state_dict(latest_info['soundstream'])
         stft_disc.load_state_dict(latest_info['stft_disc'])
         optimizer_g.load_state_dict(latest_info['optimizer_g'])
         lr_scheduler_g.load_state_dict(latest_info['lr_scheduler_g'])
         optimizer_d.load_state_dict(latest_info['optimizer_d'])
         lr_scheduler_d.load_state_dict(latest_info['lr_scheduler_d'])
-    train(args, encodec, stft_disc, train_loader, valid_loader, optimizer_g,
+    train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
           optimizer_d, lr_scheduler_g, lr_scheduler_d, logger)
 
 
-def train(args, encodec, stft_disc, train_loader, valid_loader, optimizer_g,
+def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
           optimizer_d, lr_scheduler_g, lr_scheduler_d, logger):
     best_val_loss = float("inf")
     best_val_epoch = -1
     global_step = 0
     for epoch in range(args.st_epoch, args.N_EPOCHS + 1):
-        encodec.train()
+        soundstream.train()
         stft_disc.train()
         train_loss_d = 0.0
         train_adv_g_loss = 0.0
@@ -259,7 +262,7 @@ def train(args, encodec, stft_disc, train_loader, valid_loader, optimizer_g,
             global_step += 1  # record the global step
             for optimizer_idx in [0, 1]:  # we have two optimizer
                 x_wav = get_input(x)
-                G_x, commit_loss, last_layer = encodec(x_wav)
+                G_x, commit_loss, last_layer = soundstream(x_wav)
                 if optimizer_idx == 0:
                     # update generator
                     y_disc_r, fmap_r = stft_disc(x_wav.contiguous())
@@ -313,7 +316,7 @@ def train(args, encodec, stft_disc, train_loader, valid_loader, optimizer_g,
             train_commit_loss / len(train_loader))
         logger.log_info(message)
         with torch.no_grad():
-            encodec.eval()
+            soundstream.eval()
             stft_disc.eval()
             valid_loss_d = 0.0
             valid_loss_g = 0.0
@@ -327,7 +330,7 @@ def train(args, encodec, stft_disc, train_loader, valid_loader, optimizer_g,
                 x = x.to(args.device)
                 for optimizer_idx in [0, 1]:
                     x_wav = get_input(x)
-                    G_x, commit_loss, _ = encodec(x_wav)
+                    G_x, commit_loss, _ = soundstream(x_wav)
                     if optimizer_idx == 0:
                         valid_commit_loss += commit_loss
                         y_disc_r, fmap_r = stft_disc(x_wav.contiguous())
@@ -354,8 +357,8 @@ def train(args, encodec, stft_disc, train_loader, valid_loader, optimizer_g,
                                              fmap_r_det, fmap_gen_det)
                         valid_loss_d += loss_d.item()
             if dist.get_rank() == 0:
-                best_model = encodec.state_dict().copy()
-                latest_model_soundstream = encodec.state_dict().copy()
+                best_model = soundstream.state_dict().copy()
+                latest_model_soundstream = soundstream.state_dict().copy()
                 latest_model_dis = stft_disc.state_dict().copy()
                 if valid_rec_loss < best_val_loss:
                     best_val_loss = valid_rec_loss
@@ -363,7 +366,7 @@ def train(args, encodec, stft_disc, train_loader, valid_loader, optimizer_g,
                 torch.save(best_model,
                            args.PATH + '/best_' + str(epoch) + '.pth')
                 latest_save = {}
-                latest_save['encodec'] = latest_model_soundstream
+                latest_save['soundstream'] = latest_model_soundstream
                 latest_save['stft_disc'] = latest_model_dis
                 latest_save['epoch'] = epoch
                 latest_save['optimizer_g'] = optimizer_g.state_dict()

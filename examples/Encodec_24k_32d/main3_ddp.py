@@ -117,9 +117,9 @@ def get_args():
     parser.add_argument(
         '--save_dir', type=str, default='log', help='log save path')
     parser.add_argument(
-        '--train_data_path', type=str, default="", help='training data')
+        '--train_data_path', type=str, default='', help='training data')
     parser.add_argument(
-        '--valid_data_path', type=list, default="", help='training data')
+        '--valid_data_path', type=str, default='', help='training data')
     parser.add_argument(
         '--resume', action='store_true', help='whether re-train model')
     parser.add_argument(
@@ -166,7 +166,8 @@ def main_worker(local_rank, args):
     #CUDA_VISIBLE_DEVICES = int(args.local_rank)
     logger = Logger(args)
     # 与 ../Encodec_16k_320/main3_ddp.py 仅有此处不同
-    soundstream = SoundStream(n_filters=32, D=512, ratios=[2, 2, 2, 4])  # 32倍下采
+    # 32倍下采
+    soundstream = SoundStream(n_filters=32, D=512, ratios=[2, 2, 2, 4])
     print('soundstream ', soundstream)
     # assert 1==2
     stft_disc = MultiScaleSTFTDiscriminator(filters=32)
