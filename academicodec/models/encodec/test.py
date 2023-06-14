@@ -160,7 +160,7 @@ def test_batch():
         fatal(f"Input file {args.input} does not exist.")
     input_lists = os.listdir(args.input)
     input_lists.sort()
-    soundstream = SoundStream(n_filters=32, D=512, ratios=args.ratios)
+    soundstream = SoundStream(n_filters=32, D=512, ratios=args.ratios, sample_rate=args.sr)
     parameter_dict = torch.load(args.resume_path)
     new_state_dict = OrderedDict()
     # k 为 module.xxx.weight, v 为权重

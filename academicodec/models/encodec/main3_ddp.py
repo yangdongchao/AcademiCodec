@@ -180,7 +180,7 @@ def main_worker(local_rank, args):
     logger = Logger(args)
     # 与 ../Encodec_16k_320/main3_ddp.py 仅有此处不同
     # 32倍下采
-    soundstream = SoundStream(n_filters=32, D=512, ratios=args.ratios)
+    soundstream = SoundStream(n_filters=32, D=512, ratios=args.ratios, sample_rate=args.sr)
     stft_disc = MultiScaleSTFTDiscriminator(filters=32)
     if args.distributed:
         soundstream = torch.nn.SyncBatchNorm.convert_sync_batchnorm(soundstream)
@@ -198,6 +198,7 @@ def main_worker(local_rank, args):
         stft_disc = DDP(stft_disc,
                         device_ids=[args.local_rank],
                         find_unused_parameters=True)
+    # 这里之后需要看下 sr 的问题，如果输入 wav 的 sr 和 `--sr` 不一直则会有问题
     train_dataset = NSynthDataset(audio_dir=args.train_data_path)
     valid_dataset = NSynthDataset(audio_dir=args.valid_data_path)
     args.sr = train_dataset.sr
