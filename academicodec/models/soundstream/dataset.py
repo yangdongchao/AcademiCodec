@@ -1,4 +1,5 @@
 # 和 Encodec* 的 dataset.py 有点类似但是不完全一样
+# 主要是 prob > 0.7 的时候多了 ans2
 import glob
 import random
 
@@ -15,9 +16,7 @@ class NSynthDataset(Dataset):
         self.filenames = []
         self.filenames.extend(glob.glob(audio_dir + "/*.wav"))
         print(len(self.filenames))
-        #assert 1==2
         _, self.sr = torchaudio.load(self.filenames[0])
-        #print(self.sr)
         self.max_len = 24000  # 24000
 
     def __len__(self):
