@@ -15,7 +15,7 @@ class SoundStream(nn.Module):
                  n_filters,
                  D,
                  target_bandwidths=[1, 2, 4, 8, 12],
-                 ratios=[6, 5, 4, 2],
+                 ratios=[8, 5, 4, 2],
                  sample_rate=24000,
                  bins=1024,
                  normalize=False):

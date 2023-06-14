@@ -16,7 +16,7 @@ class SoundStream(nn.Module):
                  D,
                  # 与 ../Encodec_16k_320/net3.py 只有这里和 42 行不同
                  target_bandwidths=[7.5, 15],
-                 ratios=[6, 5, 4, 2],
+                 ratios=[8, 5, 4, 2],
                  sample_rate=24000,
                  bins=1024,
                  normalize=False):
