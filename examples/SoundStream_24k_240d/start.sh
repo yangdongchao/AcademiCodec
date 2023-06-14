@@ -1,1 +1,1 @@
-../Encodec_24k_32d/start.sh
+../Encodec_24k_240d/start.sh
