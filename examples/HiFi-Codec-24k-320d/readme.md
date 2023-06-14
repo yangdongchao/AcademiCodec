@@ -1,4 +1,3 @@
-移动了代码位置后 `test.sh` 可以跑通，`start.sh` 暂未验证
 ## How to train your model
 Firstly, set the related path in start.sh file, then <br>
 ```bash
