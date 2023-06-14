@@ -10,7 +10,7 @@ from academicodec.quantization import ResidualVectorQuantizer
 # Generator
 
 
-class Encodec(nn.Module):
+class SoundStream(nn.Module):
     def __init__(self,
                  n_filters,
                  D,

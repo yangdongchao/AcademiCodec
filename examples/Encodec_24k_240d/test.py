@@ -14,7 +14,7 @@ from pathlib import Path
 import torch
 import torchaudio
 # 这里用的是 Encodec 但是好像和 Encodec_16k_320 用的 SoundStream 是一样的
-from model import Encodec
+from net3 import SoundStream
 
 
 def save_audio(wav: torch.Tensor,
@@ -151,7 +151,7 @@ def test_batch():
         fatal(f"Input file {args.input} does not exist.")
     input_lists = os.listdir(args.input)
     input_lists.sort()
-    model = Encodec(n_filters=32, D=512, ratios=[6, 5, 4, 2])
+    model = SoundStream(n_filters=32, D=512, ratios=[6, 5, 4, 2])
     parameter_dict = torch.load(args.resume_path)
     new_state_dict = OrderedDict()
     # k为module.xxx.weight, v为权重
