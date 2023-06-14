@@ -114,6 +114,37 @@ def test_one(args, wav_root, store_root, rescale, soundstream):
     print('finish decompressing')
 
 
+def remove_encodec_weight_norm(model):
+    from academicodec.modules import SConv1d
+    from academicodec.modules.seanet import SConvTranspose1d
+    from academicodec.modules.seanet import SEANetResnetBlock
+    from torch.nn.utils import remove_weight_norm
+
+    encoder = model.encoder.model
+    for key in encoder._modules:
+        if isinstance(encoder._modules[key], SEANetResnetBlock):
+            remove_weight_norm(encoder._modules[key].shortcut.conv.conv)
+            block_modules = encoder._modules[key].block._modules
+            for skey in block_modules:
+                if isinstance(block_modules[skey], SConv1d):
+                    remove_weight_norm(block_modules[skey].conv.conv)
+        elif isinstance(encoder._modules[key], SConv1d):
+            remove_weight_norm(encoder._modules[key].conv.conv)
+
+    decoder = model.decoder.model
+    for key in decoder._modules:
+        if isinstance(decoder._modules[key], SEANetResnetBlock):
+            remove_weight_norm(decoder._modules[key].shortcut.conv.conv)
+            block_modules = decoder._modules[key].block._modules
+            for skey in block_modules:
+                if isinstance(block_modules[skey], SConv1d):
+                    remove_weight_norm(block_modules[skey].conv.conv)
+        elif isinstance(decoder._modules[key], SConvTranspose1d):
+            remove_weight_norm(decoder._modules[key].convtr.convtr)
+        elif isinstance(decoder._modules[key], SConv1d):
+            remove_weight_norm(decoder._modules[key].conv.conv)
+
+
 def test_batch():
     args = get_parser().parse_args()
     if not args.input.exists():
@@ -130,6 +161,7 @@ def test_batch():
         name = k[7:]
         new_state_dict[name] = v
     soundstream.load_state_dict(new_state_dict)  # load model
+    remove_encodec_weight_norm(soundstream)
     soundstream = soundstream.cuda()
     os.makedirs(args.output, exist_ok=True)
     for audio in input_lists:

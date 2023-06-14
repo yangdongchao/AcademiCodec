@@ -13,7 +13,6 @@ from pathlib import Path
 
 import torch
 import torchaudio
-# 这里用的是 Encodec 但是好像和 Encodec_16k_320 用的 SoundStream 是一样的
 from net3 import SoundStream
 
 
@@ -117,7 +116,8 @@ def test_one(args, wav_root, store_root, rescale, soundstream):
 
 def remove_encodec_weight_norm(model):
     from academicodec.modules import SConv1d
-    from academicodec.modules.seanet import SConvTranspose1d, SEANetResnetBlock
+    from academicodec.modules.seanet import SConvTranspose1d
+    from academicodec.modules.seanet import SEANetResnetBlock
     from torch.nn.utils import remove_weight_norm
 
     encoder = model.encoder.model
@@ -151,17 +151,17 @@ def test_batch():
         fatal(f"Input file {args.input} does not exist.")
     input_lists = os.listdir(args.input)
     input_lists.sort()
-    model = SoundStream(n_filters=32, D=512, ratios=[6, 5, 4, 2])
+    soundstream = SoundStream(n_filters=32, D=512, ratios=[6, 5, 4, 2])
     parameter_dict = torch.load(args.resume_path)
     new_state_dict = OrderedDict()
-    # k为module.xxx.weight, v为权重
+    # k 为 module.xxx.weight, v 为权重
     for k, v in parameter_dict.items():
         # 截取`module.`后面的xxx.weight
         name = k[7:]
         new_state_dict[name] = v
-    model.load_state_dict(new_state_dict)  # load model
-    remove_encodec_weight_norm(model)
-    model = model.cuda()
+    soundstream.load_state_dict(new_state_dict)  # load model
+    remove_encodec_weight_norm(soundstream)
+    soundstream = soundstream.cuda()
     os.makedirs(args.output, exist_ok=True)
     for audio in input_lists:
         test_one(
@@ -169,7 +169,7 @@ def test_batch():
             wav_root=os.path.join(args.input, audio),
             store_root=os.path.join(args.output, audio),
             rescale=args.rescale,
-            soundstream=model)
+            soundstream=soundstream)
 
 
 if __name__ == '__main__':
