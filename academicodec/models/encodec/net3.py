@@ -7,14 +7,12 @@ from academicodec.modules.seanet import SEANetDecoder
 from academicodec.modules.seanet import SEANetEncoder
 from academicodec.quantization import ResidualVectorQuantizer
 
+
 # Generator
-
-
 class SoundStream(nn.Module):
     def __init__(self,
                  n_filters,
                  D,
-                 # 与 ../Encodec_16k_320/net3.py 只有这里和 42 行不同
                  target_bandwidths=[7.5, 15],
                  ratios=[8, 5, 4, 2],
                  sample_rate=24000,

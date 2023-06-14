@@ -154,6 +154,13 @@ def get_args():
         default=[8, 5, 4, 2],
         help='ratios of SoundStream, shoud be set for different hop_size (32d, 320, 240d, ...)'
     )
+    parser.add_argument(
+        '--target_bandwidths',
+        type=float,
+        nargs='+',
+        # default for 16k_320d
+        default=[1, 1.5, 2, 4, 6, 12],
+        help='target_bandwidths of net3.py')
     args = parser.parse_args()
     time_str = time.strftime('%Y-%m-%d-%H-%M')
     if args.resume:

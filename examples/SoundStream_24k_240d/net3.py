@@ -1,1 +1,1 @@
-../Encodec_24k_240d/net3.py
+../../academicodec/models/encodec/net3.py
