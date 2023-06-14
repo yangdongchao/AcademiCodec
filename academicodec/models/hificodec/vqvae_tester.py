@@ -4,7 +4,8 @@ import librosa
 import torch
 import torch.nn as nn
 from librosa.util import normalize
-from vqvae import VQVAE
+
+from academicodec.models.hificodec.vqvae import VQVAE
 
 
 class VqvaeTester(nn.Module):

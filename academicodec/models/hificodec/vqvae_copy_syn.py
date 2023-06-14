@@ -6,7 +6,8 @@ from pathlib import Path
 
 import soundfile as sf
 from tqdm import tqdm
-from vqvae_tester import VqvaeTester
+
+from academicodec.models.hificodec.vqvae_tester import VqvaeTester
 
 parser = argparse.ArgumentParser()
 

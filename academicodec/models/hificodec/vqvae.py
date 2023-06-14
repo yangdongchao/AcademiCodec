@@ -2,10 +2,11 @@ import json
 
 import torch
 import torch.nn as nn
-from env import AttrDict
-from models import Encoder
-from models import Generator
-from models import Quantizer
+
+from academicodec.models.hificodec.env import AttrDict
+from academicodec.models.hificodec.models import Encoder
+from academicodec.models.hificodec.models import Generator
+from academicodec.models.hificodec.models import Quantizer
 
 
 class VQVAE(nn.Module):

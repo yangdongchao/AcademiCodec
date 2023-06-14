@@ -14,7 +14,7 @@ from torch.nn import functional as F
 from torch.nn.utils import spectral_norm
 from torch.nn.utils import weight_norm
 
-from .norm import ConvLayerNorm
+from academicodec.modules.norm import ConvLayerNorm
 
 CONV_NORMALIZATIONS = frozenset([
     'none', 'weight_norm', 'spectral_norm', 'time_layer_norm', 'layer_norm',

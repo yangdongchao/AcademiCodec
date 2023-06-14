@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from academicodec.utils import get_padding
-from academicodec.utils import init_weights
 from torch.nn import AvgPool1d
 from torch.nn import Conv1d
 from torch.nn import Conv2d
@@ -10,6 +8,9 @@ from torch.nn import ConvTranspose1d
 from torch.nn.utils import remove_weight_norm
 from torch.nn.utils import spectral_norm
 from torch.nn.utils import weight_norm
+
+from academicodec.utils import get_padding
+from academicodec.utils import init_weights
 
 LRELU_SLOPE = 0.1
 

@@ -9,8 +9,9 @@ import typing as tp
 import torch
 import torchaudio
 from einops import rearrange
-from modules import NormConv2d
 from torch import nn
+
+from academicodec.modules import NormConv2d
 
 FeatureMapType = tp.List[torch.Tensor]
 LogitsType = torch.Tensor

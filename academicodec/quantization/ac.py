@@ -11,8 +11,8 @@ import typing as tp
 
 import torch
 
-from ..binary import BitPacker
-from ..binary import BitUnpacker
+from academicodec.binary import BitPacker
+from academicodec.binary import BitUnpacker
 
 
 def build_stable_quantized_cdf(pdf: torch.Tensor,

@@ -13,17 +13,18 @@ from torch.utils.data import DistributedSampler, DataLoader
 import torch.multiprocessing as mp
 from torch.distributed import init_process_group
 from torch.nn.parallel import DistributedDataParallel
-from env import AttrDict, build_env
-from meldataset import MelDataset, mel_spectrogram, get_dataset_filelist
+
+from academicodec.models.hificodec.env import AttrDict, build_env
+from academicodec.models.hificodec.meldataset import MelDataset, mel_spectrogram, get_dataset_filelist
 from academicodec.models.encodec.msstftd import MultiScaleSTFTDiscriminator
-from models import Generator
-from models import MultiPeriodDiscriminator
-from models import MultiScaleDiscriminator
-from models import feature_loss
-from models import generator_loss
-from models import discriminator_loss
-from models import Encoder
-from models import Quantizer
+from academicodec.models.hificodec.models import Generator
+from academicodec.models.hificodec.models import MultiPeriodDiscriminator
+from academicodec.models.hificodec.models import MultiScaleDiscriminator
+from academicodec.models.hificodec.models import feature_loss
+from academicodec.models.hificodec.models import generator_loss
+from academicodec.models.hificodec.models import discriminator_loss
+from academicodec.models.hificodec.models import Encoder
+from academicodec.models.hificodec.models import Quantizer
 from academicodec.utils import plot_spectrogram
 from academicodec.utils import scan_checkpoint
 from academicodec.utils import load_checkpoint
