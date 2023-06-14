@@ -4,6 +4,7 @@ import time
 
 import torch
 import torch.distributed as dist
+from academicodec.models.encodec.dataset import NSynthDataset
 from academicodec.models.encodec.distributed.launch import launch
 from academicodec.models.encodec.loss import criterion_d
 from academicodec.models.encodec.loss import criterion_g
@@ -16,7 +17,7 @@ from net3 import SoundStream
 from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
 
-from dataset import NSynthDataset
+
 NODE_RANK = os.environ['INDEX'] if 'INDEX' in os.environ else 0
 NODE_RANK = int(NODE_RANK)
 MASTER_ADDR, MASTER_PORT = (os.environ['CHIEF_IP'],
