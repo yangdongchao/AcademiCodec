@@ -76,11 +76,6 @@ def get_args():
         action='store_true',
         help='use tensorboard for logging')
 
-    parser.add_argument(
-        '--soundstream_ratios',
-        type=list,
-        default=[6, 5, 4, 2],
-        help='soundstream downsample rate ')
     # args for training
     parser.add_argument(
         '--LAMBDA_ADV',
@@ -134,6 +129,14 @@ def get_args():
         '--resume', action='store_true', help='whether re-train model')
     parser.add_argument(
         '--resume_path', type=str, default='path_to_resume', help='resume_path')
+    parser.add_argument(
+        '--ratios',
+        type=int,
+        nargs='+',
+        # probs(ratios) = hop_size
+        default=[8, 5, 4, 2],
+        help='ratios of SoundStream, shoud be set for different hop_size (32d, 320, 240d, ...)'
+    )
     args = parser.parse_args()
     time_str = time.strftime('%Y-%m-%d-%H-%M')
     if args.resume:
@@ -177,7 +180,7 @@ def main_worker(local_rank, args):
     logger = Logger(args)
     # 与 ../Encodec_16k_320/main3_ddp.py 仅有此处不同
     # 32倍下采
-    soundstream = SoundStream(n_filters=32, D=512, ratios=[2, 2, 2, 4])
+    soundstream = SoundStream(n_filters=32, D=512, ratios=args.ratios)
     stft_disc = MultiScaleSTFTDiscriminator(filters=32)
     if args.distributed:
         soundstream = torch.nn.SyncBatchNorm.convert_sync_batchnorm(soundstream)

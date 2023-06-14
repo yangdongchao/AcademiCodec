@@ -78,11 +78,6 @@ def get_args():
         action='store_true',
         help='use tensorboard for logging')
 
-    parser.add_argument(
-        '--soundstream_ratios',
-        type=list,
-        default=[6, 5, 4, 2],
-        help='soundstream downsample rate ')
     # args for training
     parser.add_argument(
         '--LAMBDA_ADV',
@@ -136,6 +131,14 @@ def get_args():
         '--resume', action='store_true', help='whether re-train model')
     parser.add_argument(
         '--resume_path', type=str, default='path_to_resume', help='resume_path')
+    parser.add_argument(
+        '--ratios',
+        type=int,
+        nargs='+',
+        # probs(ratios) = hop_size
+        default=[8, 5, 4, 2],
+        help='ratios of SoundStream, shoud be set for different hop_size (32d, 320, 240d, ...)'
+    )
     args = parser.parse_args()
     time_str = time.strftime('%Y-%m-%d-%H-%M')
     if args.resume:
@@ -177,7 +180,7 @@ def main_worker(local_rank, args):
     args.distributed = args.world_size > 1
     #CUDA_VISIBLE_DEVICES = int(args.local_rank)
     logger = Logger(args)
-    soundstream = SoundStream(n_filters=32, D=512, ratios=[6, 5, 4, 2])
+    soundstream = SoundStream(n_filters=32, D=512, ratios=args.ratios)
     stft_disc = MultiScaleSTFTDiscriminator(filters=32)
     if args.distributed:
         soundstream = torch.nn.SyncBatchNorm.convert_sync_batchnorm(soundstream)
