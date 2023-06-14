@@ -120,7 +120,7 @@ def get_args():
     parser.add_argument(
         '--print_freq', type=int, default=10, help='the print number')
     parser.add_argument(
-        '--save_dir', type=str, default='log/', help='log save path')
+        '--save_dir', type=str, default='log', help='log save path')
     parser.add_argument(
         '--train_data_path',
         type=str,
@@ -176,7 +176,7 @@ def main_worker(local_rank, args):
     args.distributed = args.world_size > 1
     #CUDA_VISIBLE_DEVICES = int(args.local_rank)
     logger = Logger(args)
-    soundstream = SoundStream(n_filters=32, D=512, ratios=[6, 5, 4, 2])  # 
+    soundstream = SoundStream(n_filters=32, D=512, ratios=[6, 5, 4, 2])
     stft_disc = MultiScaleSTFTDiscriminator(filters=32)
     if args.distributed:
         soundstream = torch.nn.SyncBatchNorm.convert_sync_batchnorm(soundstream)
@@ -256,8 +256,6 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
             train_loader.sampler.set_epoch(epoch)
         for x in tqdm(train_loader):
             x = x.to(args.device)
-            # print('x ', x.shape)
-            # assert 1==2
             k_iter += 1
             global_step += 1  # record the global step
             for optimizer_idx in [0, 1]:  # we have two optimizer
@@ -306,7 +304,6 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
                 commit_loss.item(), loss_d.item(), d_weight.item())
             if k_iter % args.print_freq == 0:
                 logger.log_info(message)
-                # assert 1==2
         lr_scheduler_g.step()
         lr_scheduler_d.step()
         message = '<epoch:{:d}, <total_loss_g_train:{:.4f}, recon_loss_train:{:.4f}, adversarial_loss_train:{:.4f}, feature_loss_train:{:.4f}, commit_loss_train:{:.4f}>'.format(

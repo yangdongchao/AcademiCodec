@@ -110,20 +110,29 @@ def get_args():
     parser.add_argument('--discriminator_iter_start', type=int, default=500)
     parser.add_argument('--BATCH_SIZE', type=int, default=2, help='batch size')
     parser.add_argument(
-        '--PATH', type=str, default='model_path/', help='model_path')
+        '--PATH',
+        type=str,
+        default='model_path/',
+        help='The path to save the model')
     parser.add_argument('--sr', type=int, default=24000, help='sample rate')
     parser.add_argument(
         '--print_freq', type=int, default=10, help='the print number')
     parser.add_argument(
         '--save_dir', type=str, default='log', help='log save path')
     parser.add_argument(
-        '--train_data_path', type=str, default='', help='training data')
+        '--train_data_path',
+        type=str,
+        default='path_to_wavs',
+        help='training data')
     parser.add_argument(
-        '--valid_data_path', type=str, default='', help='training data')
+        '--valid_data_path',
+        type=str,
+        default='path_to_val_wavs',
+        help='training data')
     parser.add_argument(
         '--resume', action='store_true', help='whether re-train model')
     parser.add_argument(
-        '--resume_path', type=str, default='', help='resume_path')
+        '--resume_path', type=str, default='path_to_resume', help='resume_path')
     args = parser.parse_args()
     time_str = time.strftime('%Y-%m-%d-%H-%M')
     if args.resume:
@@ -168,8 +177,6 @@ def main_worker(local_rank, args):
     # 与 ../Encodec_16k_320/main3_ddp.py 仅有此处不同
     # 32倍下采
     soundstream = SoundStream(n_filters=32, D=512, ratios=[2, 2, 2, 4])
-    print('soundstream ', soundstream)
-    # assert 1==2
     stft_disc = MultiScaleSTFTDiscriminator(filters=32)
     if args.distributed:
         soundstream = torch.nn.SyncBatchNorm.convert_sync_batchnorm(soundstream)
@@ -248,8 +255,6 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
             train_loader.sampler.set_epoch(epoch)
         for x in tqdm(train_loader):
             x = x.to(args.device)
-            # print('x ', x.shape)
-            # assert 1==2
             k_iter += 1
             global_step += 1  # record the global step
             for optimizer_idx in [0, 1]:  # we have two optimizer
@@ -259,9 +264,6 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
                     # update generator
                     y_disc_r, fmap_r = stft_disc(x_wav.contiguous())
                     y_disc_gen, fmap_gen = stft_disc(G_x.contiguous())
-                    #last_layer = soundstream.get_last_layer()
-                    # print(last_layer)
-                    # assert 1==2
                     total_loss_g, rec_loss, adv_g_loss, feat_loss, d_weight = loss_g(
                         commit_loss,
                         x_wav,
@@ -301,7 +303,6 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
                 commit_loss.item(), loss_d.item(), d_weight.item())
             if k_iter % args.print_freq == 0:
                 logger.log_info(message)
-                # assert 1==2
         lr_scheduler_g.step()
         lr_scheduler_d.step()
         message = '<epoch:{:d}, <total_loss_g_train:{:.4f}, recon_loss_train:{:.4f}, adversarial_loss_train:{:.4f}, feature_loss_train:{:.4f}, commit_loss_train:{:.4f}>'.format(

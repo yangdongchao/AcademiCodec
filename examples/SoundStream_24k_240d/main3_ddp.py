@@ -1,3 +1,4 @@
+# 与 Encodec_24k_240d main3_ddp.py 相比只有鉴别器不同
 import argparse
 import itertools
 import os
@@ -128,20 +129,29 @@ def get_args():
     parser.add_argument('--discriminator_iter_start', type=int, default=500)
     parser.add_argument('--BATCH_SIZE', type=int, default=2, help='batch size')
     parser.add_argument(
-        '--PATH', type=str, default='model_path/', help='model_path')
+        '--PATH',
+        type=str,
+        default='model_path/',
+        help='The path to save the model')
     parser.add_argument('--sr', type=int, default=24000, help='sample rate')
     parser.add_argument(
         '--print_freq', type=int, default=10, help='the print number')
     parser.add_argument(
         '--save_dir', type=str, default='log', help='log save path')
     parser.add_argument(
-        '--train_data_path', type=str, default='', help='training data')
+        '--train_data_path',
+        type=str,
+        default='path_to_wavs',
+        help='training data')
     parser.add_argument(
-        '--valid_data_path', type=str, default='', help='training data')
+        '--valid_data_path',
+        type=str,
+        default='path_to_val_wavs',
+        help='training data')
     parser.add_argument(
         '--resume', action='store_true', help='whether re-train model')
     parser.add_argument(
-        '--resume_path', type=str, default='', help='resume_path')
+        '--resume_path', type=str, default='path_to_resume', help='resume_path')
     args = parser.parse_args()
     time_str = time.strftime('%Y-%m-%d-%H-%M')
     if args.resume:
@@ -183,8 +193,8 @@ def main_worker(local_rank, args):
     args.distributed = args.world_size > 1
     #CUDA_VISIBLE_DEVICES = int(args.local_rank)
     logger = Logger(args)
-    soundstream = SoundStream(
-        n_filters=32, D=512, ratios=[6, 5, 4, 2])  # 240倍下采
+    # 240倍下采
+    soundstream = SoundStream(n_filters=32, D=512, ratios=[6, 5, 4, 2])
     msd = MultiScaleDiscriminator()
     mpd = MultiPeriodDiscriminator()
     #print('soundstream ', soundstream)
