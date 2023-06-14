@@ -1,13 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from modules import NormConv1d
-from modules import NormConv2d
+from academicodec.modules import NormConv1d
+from academicodec.modules import NormConv2d
+from academicodec.utils import get_padding
 from torch.nn import AvgPool1d
 from torch.nn.utils import spectral_norm
 from torch.nn.utils import weight_norm
-
-from utils import get_padding
 
 LRELU_SLOPE = 0.1
 

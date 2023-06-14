@@ -5,21 +5,20 @@ import time
 
 import torch
 import torch.distributed as dist
+from academicodec.models.encodec.distributed.launch import launch
 from academicodec.models.encodec.msstftd import MultiScaleSTFTDiscriminator
-from distributed.launch import launch
-from loss import criterion_d
-from loss import criterion_g
-from loss import loss_dis
-from loss import loss_g
-from models import MultiPeriodDiscriminator
-from models import MultiScaleDiscriminator
+from academicodec.models.soundstream.dataset import NSynthDataset
+from academicodec.models.soundstream.loss import criterion_d
+from academicodec.models.soundstream.loss import criterion_g
+from academicodec.models.soundstream.loss import loss_dis
+from academicodec.models.soundstream.loss import loss_g
+from academicodec.models.soundstream.models import MultiPeriodDiscriminator
+from academicodec.models.soundstream.models import MultiScaleDiscriminator
+from academicodec.utils import Logger
+from academicodec.utils import seed_everything
 from net3 import SoundStream
 from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
-
-from dataset import NSynthDataset
-from academicodec.utils import Logger
-from academicodec.utils import seed_everything
 NODE_RANK = os.environ['INDEX'] if 'INDEX' in os.environ else 0
 NODE_RANK = int(NODE_RANK)
 MASTER_ADDR, MASTER_PORT = (os.environ['CHIEF_IP'],
