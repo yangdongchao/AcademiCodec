@@ -13,7 +13,7 @@ from pathlib import Path
 
 import torch
 import torchaudio
-from net3 import SoundStream
+from academicodec.models.encodec.net3 import SoundStream
 
 
 def save_audio(wav: torch.Tensor,
@@ -89,8 +89,7 @@ def get_parser():
         nargs='+',
         # default for 16k_320d
         default=[1, 1.5, 2, 4, 6, 12],
-        help='target_bandwidths of net3.py'
-    )
+        help='target_bandwidths of net3.py')
 
     return parser
 
@@ -165,12 +164,17 @@ def remove_encodec_weight_norm(model):
 
 def test_batch():
     args = get_parser().parse_args()
-    print("args.target_bandwidths:",args.target_bandwidths)
+    print("args.target_bandwidths:", args.target_bandwidths)
     if not args.input.exists():
         fatal(f"Input file {args.input} does not exist.")
     input_lists = os.listdir(args.input)
     input_lists.sort()
-    soundstream = SoundStream(n_filters=32, D=512, ratios=args.ratios, sample_rate=args.sr, target_bandwidths=args.target_bandwidths)
+    soundstream = SoundStream(
+        n_filters=32,
+        D=512,
+        ratios=args.ratios,
+        sample_rate=args.sr,
+        target_bandwidths=args.target_bandwidths)
     parameter_dict = torch.load(args.resume_path)
     new_state_dict = OrderedDict()
     # k 为 module.xxx.weight, v 为权重

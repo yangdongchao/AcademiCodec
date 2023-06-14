@@ -11,12 +11,11 @@ from academicodec.models.encodec.loss import criterion_g
 from academicodec.models.encodec.loss import loss_dis
 from academicodec.models.encodec.loss import loss_g
 from academicodec.models.encodec.msstftd import MultiScaleSTFTDiscriminator
+from academicodec.models.encodec.net3 import SoundStream
 from academicodec.utils import Logger
 from academicodec.utils import seed_everything
-from net3 import SoundStream
 from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
-
 
 NODE_RANK = os.environ['INDEX'] if 'INDEX' in os.environ else 0
 NODE_RANK = int(NODE_RANK)
@@ -137,6 +136,14 @@ def get_args():
         default=[8, 5, 4, 2],
         help='ratios of SoundStream, shoud be set for different hop_size (32d, 320, 240d, ...)'
     )
+    parser.add_argument(
+        '--target_bandwidths',
+        type=float,
+        nargs='+',
+        # default for 16k_320d
+        default=[1, 1.5, 2, 4, 6, 12],
+        help='target_bandwidths of net3.py')
+
     args = parser.parse_args()
     time_str = time.strftime('%Y-%m-%d-%H-%M')
     if args.resume:
@@ -180,7 +187,12 @@ def main_worker(local_rank, args):
     logger = Logger(args)
     # 与 ../Encodec_16k_320/main3_ddp.py 仅有此处不同
     # 32倍下采
-    soundstream = SoundStream(n_filters=32, D=512, ratios=args.ratios, sample_rate=args.sr)
+    soundstream = SoundStream(
+        n_filters=32,
+        D=512,
+        ratios=args.ratios,
+        sample_rate=args.sr,
+        target_bandwidths=args.target_bandwidths)
     stft_disc = MultiScaleSTFTDiscriminator(filters=32)
     if args.distributed:
         soundstream = torch.nn.SyncBatchNorm.convert_sync_batchnorm(soundstream)

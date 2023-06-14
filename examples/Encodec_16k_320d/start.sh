@@ -8,5 +8,6 @@ python3 ${BIN_DIR}/main3_ddp.py \
         --PATH  path_to_save_model \
         --train_data_path path_to_training_data \
         --valid_data_path path_to_val_data \
+        --sr 16000 \
         --ratios 8 5 4 2 \
-        --sr 16000
+        --target_bandwidths 1 1.5 2 4 6 12
