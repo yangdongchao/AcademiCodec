@@ -4,9 +4,9 @@ source path.sh
 set -e
 
 log_root="logs"
-
-input_training_file="train.lst" # .lst save the wav path.
-input_validation_file="valid_256.lst"
+# .lst save the wav path.
+input_training_file="train.lst"
+input_validation_file="valid.lst"
 
 #mode=debug
 mode=train
