@@ -1,12 +1,11 @@
-
 #!/bin/bash
 source path.sh
 set -e
 
 log_root="logs"
-
-input_training_file="train.lst" # .lst save the wav path.
-input_validation_file="valid_256.lst"
+# .lst save the wav path.
+input_training_file="train.lst" 
+input_validation_file="valid.lst"
 
 #mode=debug
 mode=train
@@ -28,7 +27,7 @@ if [ "${mode}" == "debug" ]; then
 elif [ "$mode" == "train" ]; then
   ## train
   echo "Train model..."
-  export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+  export CUDA_VISIBLE_DEVICES=0,1
   python ${BIN_DIR}/train.py \
     --config config_24k_320d.json \
     --checkpoint_path ${log_root} \

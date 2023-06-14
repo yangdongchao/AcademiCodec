@@ -3,6 +3,7 @@ import math
 import os
 import random
 
+import librosa
 import numpy as np
 import torch.utils.data
 from librosa.filters import mel as librosa_mel_fn
@@ -12,9 +13,9 @@ from scipy.io.wavfile import read
 MAX_WAV_VALUE = 32768.0
 
 
-def load_wav(full_path):
-    sampling_rate, data = read(full_path)
-    return data, sampling_rate
+def load_wav(full_path, sr):
+    wav, sr = librosa.load(full_path, sr=sr)
+    return wav, sr
 
 
 def dynamic_range_compression(x, C=1, clip_val=1e-5):
@@ -144,7 +145,8 @@ class MelDataset(torch.utils.data.Dataset):
         filename = self.audio_files[index]
         if self._cache_ref_count == 0:
             try:
-                audio, sampling_rate = load_wav(filename)
+                # Note by yuantian: load with the sample_rate of config
+                audio, sampling_rate = load_wav(filename, sr=self.sampling_rate)
                 audio = audio / MAX_WAV_VALUE
                 if not self.fine_tuning:
                     audio = normalize(audio) * 0.95
