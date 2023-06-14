@@ -20,7 +20,7 @@ class Encodec(nn.Module):
                  bins=1024,
                  normalize=False):
         super().__init__()
-        self.hop_length = np.prod(ratios)  # 
+        self.hop_length = np.prod(ratios)  # 计算乘积
         self.encoder = SEANetEncoder(
             n_filters=n_filters, dimension=D, ratios=ratios)
         n_q = int(1000 * target_bandwidths[-1] //

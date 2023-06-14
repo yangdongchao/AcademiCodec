@@ -22,7 +22,6 @@ class SoundStream(nn.Module):
                  normalize=False):
         super().__init__()
         self.hop_length = np.prod(ratios)  # 计算乘积
-        # print('self.hop_length ', self.hop_length)
         self.encoder = SEANetEncoder(
             n_filters=n_filters, dimension=D, ratios=ratios)
         n_q = int(1000 * target_bandwidths[-1] //
@@ -41,19 +40,20 @@ class SoundStream(nn.Module):
     def forward(self, x):
         e = self.encoder(x)
         bw = self.target_bandwidths[random.randint(0, 4)]  # [0, 4]
-        #bw = self.target_bandwidths[-1]
         quantized, codes, bandwidth, commit_loss = self.quantizer(
             e, self.frame_rate, bw)
         o = self.decoder(quantized)
         return o, commit_loss, None
 
-    def encode(self, x, target_bw=None):
+    def encode(self, x, target_bw=None, st=None):
         e = self.encoder(x)
         if target_bw is None:
             bw = self.target_bandwidths[-1]
         else:
             bw = target_bw
-        codes = self.quantizer.encode(e, self.frame_rate, bw)
+        if st is None:
+            st = 0
+        codes = self.quantizer.encode(e, self.frame_rate, bw, st)
         return codes
 
     def decode(self, codes):

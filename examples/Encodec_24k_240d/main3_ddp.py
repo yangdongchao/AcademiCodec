@@ -12,6 +12,8 @@ from academicodec.models.encodec.loss import loss_g
 from academicodec.models.encodec.msstftd import MultiScaleSTFTDiscriminator
 from academicodec.utils import Logger
 from academicodec.utils import seed_everything
+# 其他两个以及 SoundStream_24k_240d 都是 from net3 import SoundStream
+# 但是这个文件和 SoundStream_24k_240d/net3.py 只是类命名不同
 from model import Encodec
 from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
