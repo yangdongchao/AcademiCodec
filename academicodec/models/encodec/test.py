@@ -75,6 +75,14 @@ def get_parser():
         '--rescale',
         action='store_true',
         help='Automatically rescale the output to avoid clipping.')
+    parser.add_argument(
+        '--ratios',
+        type=int,
+        nargs='+',
+        # probs(ratios) = hop_size
+        default=[8, 5, 4, 2],
+        help='ratios of SoundStream, shoud be set for different hop_size (32d, 320, 240d, ...)'
+    )
     return parser
 
 
@@ -152,7 +160,7 @@ def test_batch():
         fatal(f"Input file {args.input} does not exist.")
     input_lists = os.listdir(args.input)
     input_lists.sort()
-    soundstream = SoundStream(n_filters=32, D=512, ratios=[8, 5, 4, 2])
+    soundstream = SoundStream(n_filters=32, D=512, ratios=args.ratios)
     parameter_dict = torch.load(args.resume_path)
     new_state_dict = OrderedDict()
     # k 为 module.xxx.weight, v 为权重

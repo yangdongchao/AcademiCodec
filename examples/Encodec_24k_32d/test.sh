@@ -1,9 +1,10 @@
 #!/bin/bash
 source path.sh
 
-python3 test.py \
+python3 ${BIN_DIR}/test.py \
        --input=./test_wav \
        --output=./output \
        --resume_path=checkpoint/Encodec_24khz_32d.pth \
-       --sr=24000
+       --sr=24000 \
+       --ratios 2 2 2 4
        
