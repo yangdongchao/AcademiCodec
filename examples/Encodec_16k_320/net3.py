@@ -38,7 +38,8 @@ class SoundStream(nn.Module):
 
     def forward(self, x):
         e = self.encoder(x)
-        bw = self.target_bandwidths[random.randint(0, 5)]  # [0, 4]
+        max_idx = len(self.target_bandwidths) - 1
+        bw = self.target_bandwidths[random.randint(0, max_idx)]
         quantized, codes, bandwidth, commit_loss = self.quantizer(
             e, self.frame_rate, bw)
         o = self.decoder(quantized)
