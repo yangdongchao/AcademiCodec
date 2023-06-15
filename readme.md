@@ -1,5 +1,30 @@
 # AcademiCodec: An Open Source Audio Codec Model for Academic Research
 
+This repo is organized as follows:
+
+```text
+AcademiCodec
+├── academicodec
+│   ├── utils.py      # common parts of various models
+│   ├── modules       # common parts of various models
+│   ├── ...
+│   ├── quantization  # common parts of various models
+│   └── models  # parts that are not shared by various models
+│        ├── hificodec
+│        ├── encodec
+│        ├── soundstream
+│        └── ... 
+├── evaluation_metric
+├── examples
+│    ├── SoundStream*
+│    ├── EnCodec*
+│    └── HiFi-Codec*
+│          ├── start.sh
+│          ├── ...
+│          └── test.sh
+└── README.md
+```
+
 ### On going
 This project is on going. You can find the paper on https://arxiv.org/pdf/2305.02765.pdf <br/>
 Furthermore, this project is lanched from University, we expect more researchers to be the contributor. <br/>
