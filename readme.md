@@ -9,7 +9,7 @@ AcademiCodec
 │   ├── modules       # common parts of various models
 │   ├── ...
 │   ├── quantization  # common parts of various models
-│   └── models  # parts that are not shared by various models
+│   └── models        # parts that are not shared by various models
 │        ├── hificodec
 │        ├── encodec
 │        ├── soundstream
