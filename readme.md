@@ -15,7 +15,7 @@ AcademiCodec
 │        ├── soundstream
 │        └── ... 
 ├── evaluation_metric
-├── examples
+├── egs
 │    ├── SoundStream*
 │    ├── EnCodec*
 │    └── HiFi-Codec*
