@@ -1,5 +1,30 @@
 # AcademiCodec: An Open Source Audio Codec Model for Academic Research
 
+This repo is organized as follows:
+
+```text
+AcademiCodec
+├── academicodec
+│   ├── utils.py      # common parts of various models
+│   ├── modules       # common parts of various models
+│   ├── ...
+│   ├── quantization  # common parts of various models
+│   └── models        # parts that are not shared by various models
+│        ├── hificodec
+│        ├── encodec
+│        ├── soundstream
+│        └── ... 
+├── evaluation_metric
+├── egs
+│    ├── SoundStream*
+│    ├── EnCodec*
+│    └── HiFi-Codec*
+│          ├── start.sh
+│          ├── ...
+│          └── test.sh
+└── README.md
+```
+
 ### On going
 This project is on going. You can find the paper on https://arxiv.org/pdf/2305.02765.pdf <br/>
 Furthermore, this project is lanched from University, we expect more researchers to be the contributor. <br/>
@@ -12,7 +37,7 @@ Audio codec models are widely used in audio communication as a crucial technique
 - 2023.4.16: We first release the training code for Encodec and SoundStream and our pre-trained models, includes 24khz and 16khz.
 - 2023.5.5: We release the code of HiFi-Codec.
 - 2023.6.2: Add `HiFi-Codec-24k-320d/infer.ipynb`, which can be used to infer acoustic tokens to use for later training of VALL-E, SoundStorm and etc.
-- 
+- 2023.06.13: Refactor the code structure.
 ### Dependencies
 * [PyTorch](http://pytorch.org/) version >= 1.13.0
 * Python version >= 3.8
