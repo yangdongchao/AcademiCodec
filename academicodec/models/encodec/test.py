@@ -191,7 +191,8 @@ def test_batch():
         new_state_dict[name] = v
     soundstream.load_state_dict(new_state_dict)  # load model
     remove_encodec_weight_norm(soundstream)
-    soundstream = soundstream.cuda()
+    soundstream.cuda()
+    soundstream.eval()
     os.makedirs(args.output, exist_ok=True)
     for audio in input_lists:
         test_one(
