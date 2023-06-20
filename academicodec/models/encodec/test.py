@@ -12,8 +12,8 @@ from collections import OrderedDict
 from pathlib import Path
 
 import librosa
+import soundfile as sf
 import torch
-import torchaudio
 from academicodec.models.encodec.net3 import SoundStream
 
 
@@ -27,28 +27,8 @@ def save_audio(wav: torch.Tensor,
         wav = wav * min(limit / mx, 1)
     else:
         wav = wav.clamp(-limit, limit)
-    torchaudio.save(
-        path,
-        wav,
-        sample_rate=sample_rate,
-        encoding='PCM_S',
-        bits_per_sample=16)
-
-
-def convert_audio(wav: torch.Tensor,
-                  sr: int,
-                  target_sr: int,
-                  target_channels: int):
-    assert wav.shape[0] in [1, 2], "Audio must be mono or stereo."
-    if target_channels == 1:
-        wav = wav.mean(0, keepdim=True)
-    elif target_channels == 2:
-        *shape, _, length = wav.shape
-        wav = wav.expand(*shape, target_channels, length)
-    elif wav.shape[0] == 1:
-        wav = wav.expand(target_channels, -1)
-    wav = torchaudio.transforms.Resample(sr, target_sr)(wav)
-    return wav
+    wav = wav.squeeze().cpu().numpy()
+    sf.write(path, wav, sample_rate)
 
 
 def get_parser():
@@ -97,7 +77,6 @@ def get_parser():
         # default for 16k_320d
         default=12,
         help='target_bw of net3.py')
-    
 
     return parser
 
