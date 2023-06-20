@@ -21,6 +21,7 @@ class VqvaeTester(nn.Module):
         fid = os.path.basename(wav_path)[:-4]
         wav = torch.tensor(wav).unsqueeze(0)
         wav = wav.cuda()
+        # vq_codes is acoustic token
         vq_codes = self.vqvae.encode(wav)
         syn = self.vqvae(vq_codes)
         return fid, syn
@@ -31,6 +32,6 @@ class VqvaeTester(nn.Module):
         fid = os.path.basename(wav_path)[:-4]
         wav = torch.tensor(wav).unsqueeze(0)
         wav = wav.cuda()
+        # vq_codes is acoustic token
         vq_codes = self.vqvae.encode(wav)
-
         return fid, vq_codes

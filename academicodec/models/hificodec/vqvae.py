@@ -28,14 +28,11 @@ class VQVAE(nn.Module):
         if with_encoder:
             self.encoder = Encoder(self.h)
             self.encoder.load_state_dict(ckpt['encoder'])
-        self.return_acoustic_tokens_only = return_acoustic_tokens_only
 
     def forward(self, x):
         # x is the codebook
-        acoustic_tokens = self.quantizer.embed(x)
-        if self.return_acoustic_tokens_only:
-            return acoustic_tokens
-        return self.generator(acoustic_tokens)
+        quant_emb = self.quantizer.embed(x)
+        return self.generator(quant_emb)
 
     def encode(self, x):
         batch_size = x.size(0)
@@ -44,6 +41,5 @@ class VQVAE(nn.Module):
         c = self.encoder(x.unsqueeze(1))
         q, loss_q, c = self.quantizer(c)
         c = [code.reshape(batch_size, -1) for code in c]
-        # print(torch.stack(c,-1).shape)
-        # assert 1==2
-        return torch.stack(c, -1)  #N, T, 4
+        # shape: [N, T, 4]
+        return torch.stack(c, -1)
