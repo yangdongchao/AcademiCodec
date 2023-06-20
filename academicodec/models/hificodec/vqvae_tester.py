@@ -19,8 +19,8 @@ class VqvaeTester(nn.Module):
         # wav.shape (T, ), 按照模型的 sr 读取
         wav, sr = librosa.load(wav_path, sr=self.sample_rate)
         fid = os.path.basename(wav_path)[:-4]
-        wav = torch.FloatTensor(wav).unsqueeze(0)
-        wav = wav.to(torch.device('cuda'))
+        wav = torch.tensor(wav).unsqueeze(0)
+        wav = wav.cuda()
         vq_codes = self.vqvae.encode(wav)
         syn = self.vqvae(vq_codes)
         return fid, syn
@@ -29,8 +29,8 @@ class VqvaeTester(nn.Module):
     def vq(self, wav_path):
         wav, sr = librosa.load(wav_path, sr=self.sample_rate)
         fid = os.path.basename(wav_path)[:-4]
-        wav = torch.FloatTensor(wav).unsqueeze(0)
-        wav = wav.to(torch.device('cuda'))
+        wav = torch.tensor(wav).unsqueeze(0)
+        wav = wav.cuda()
         vq_codes = self.vqvae.encode(wav)
 
         return fid, vq_codes
