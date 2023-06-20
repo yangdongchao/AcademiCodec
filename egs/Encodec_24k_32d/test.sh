@@ -8,5 +8,7 @@ python3 ${BIN_DIR}/test.py \
        --sr=24000 \
        --ratios 2 2 2 4 \
        --target_bandwidths 7.5 15 \
+       --target_bw=7.5 \
        -r
+
        

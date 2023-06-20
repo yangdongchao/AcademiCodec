@@ -91,6 +91,13 @@ def get_parser():
         # default for 16k_320d
         default=[1, 1.5, 2, 4, 6, 12],
         help='target_bandwidths of net3.py')
+    parser.add_argument(
+        '--target_bw',
+        type=float,
+        # default for 16k_320d
+        default=12,
+        help='target_bw of net3.py')
+    
 
     return parser
 
@@ -129,7 +136,7 @@ def test_one(args, wav_root, store_root, rescale, soundstream):
     wav = wav.unsqueeze(1).cuda()
 
     # compressing
-    compressed = soundstream.encode(wav, target_bw=12)
+    compressed = soundstream.encode(wav, target_bw=args.target_bw)
     print('finish compressing')
     out = soundstream.decode(compressed)
     out = out.detach().cpu().squeeze(0)
