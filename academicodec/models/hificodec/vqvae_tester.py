@@ -3,7 +3,6 @@ import os
 import librosa
 import torch
 import torch.nn as nn
-from librosa.util import normalize
 
 from academicodec.models.hificodec.vqvae import VQVAE
 
@@ -20,7 +19,6 @@ class VqvaeTester(nn.Module):
         # wav.shape (T, ), 按照模型的 sr 读取
         wav, sr = librosa.load(wav_path, sr=self.sample_rate)
         fid = os.path.basename(wav_path)[:-4]
-        wav = normalize(wav) * 0.95
         wav = torch.FloatTensor(wav).unsqueeze(0)
         wav = wav.to(torch.device('cuda'))
         vq_codes = self.vqvae.encode(wav)
@@ -31,7 +29,6 @@ class VqvaeTester(nn.Module):
     def vq(self, wav_path):
         wav, sr = librosa.load(wav_path, sr=self.sample_rate)
         fid = os.path.basename(wav_path)[:-4]
-        wav = normalize(wav) * 0.95
         wav = torch.FloatTensor(wav).unsqueeze(0)
         wav = wav.to(torch.device('cuda'))
         vq_codes = self.vqvae.encode(wav)
