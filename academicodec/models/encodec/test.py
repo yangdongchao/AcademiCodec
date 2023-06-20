@@ -11,6 +11,7 @@ import typing as tp
 from collections import OrderedDict
 from pathlib import Path
 
+import librosa
 import torch
 import torchaudio
 from academicodec.models.encodec.net3 import SoundStream
@@ -114,13 +115,19 @@ def check_clipping(wav, rescale):
 
 def test_one(args, wav_root, store_root, rescale, soundstream):
     # torchaudio.load 的采样率为原始音频的采样率，不会自动下采样
-    wav, sr = torchaudio.load(wav_root)
-    # 取单声道, output shape [1, T]
-    wav = wav[0].unsqueeze(0)
-    # 重采样为模型的采样率
-    wav = torchaudio.transforms.Resample(orig_freq=sr, new_freq=args.sr)(wav)
+    # wav, sr = torchaudio.load(wav_root)
+    # # 取单声道, output shape [1, T]
+    # wav = wav[0].unsqueeze(0)
+    # # 重采样为模型的采样率
+    # wav = torchaudio.transforms.Resample(orig_freq=sr, new_freq=args.sr)(wav)
+
+    # load wav with librosa
+    wav, sr = librosa.load(wav_root, sr=args.sr)
+    wav = torch.tensor(wav).unsqueeze(0)
+
     # add batch axis
     wav = wav.unsqueeze(1).cuda()
+
     # compressing
     compressed = soundstream.encode(wav, target_bw=12)
     print('finish compressing')
