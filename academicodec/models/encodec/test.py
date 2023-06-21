@@ -11,8 +11,9 @@ import typing as tp
 from collections import OrderedDict
 from pathlib import Path
 
+import librosa
+import soundfile as sf
 import torch
-import torchaudio
 from academicodec.models.encodec.net3 import SoundStream
 
 
@@ -26,28 +27,8 @@ def save_audio(wav: torch.Tensor,
         wav = wav * min(limit / mx, 1)
     else:
         wav = wav.clamp(-limit, limit)
-    torchaudio.save(
-        path,
-        wav,
-        sample_rate=sample_rate,
-        encoding='PCM_S',
-        bits_per_sample=16)
-
-
-def convert_audio(wav: torch.Tensor,
-                  sr: int,
-                  target_sr: int,
-                  target_channels: int):
-    assert wav.shape[0] in [1, 2], "Audio must be mono or stereo."
-    if target_channels == 1:
-        wav = wav.mean(0, keepdim=True)
-    elif target_channels == 2:
-        *shape, _, length = wav.shape
-        wav = wav.expand(*shape, target_channels, length)
-    elif wav.shape[0] == 1:
-        wav = wav.expand(target_channels, -1)
-    wav = torchaudio.transforms.Resample(sr, target_sr)(wav)
-    return wav
+    wav = wav.squeeze().cpu().numpy()
+    sf.write(path, wav, sample_rate)
 
 
 def get_parser():
@@ -90,6 +71,12 @@ def get_parser():
         # default for 16k_320d
         default=[1, 1.5, 2, 4, 6, 12],
         help='target_bandwidths of net3.py')
+    parser.add_argument(
+        '--target_bw',
+        type=float,
+        # default for 16k_320d
+        default=12,
+        help='target_bw of net3.py')
 
     return parser
 
@@ -114,15 +101,21 @@ def check_clipping(wav, rescale):
 
 def test_one(args, wav_root, store_root, rescale, soundstream):
     # torchaudio.load 的采样率为原始音频的采样率，不会自动下采样
-    wav, sr = torchaudio.load(wav_root)
-    # 取单声道, output shape [1, T]
-    wav = wav[0].unsqueeze(0)
-    # 重采样为模型的采样率
-    wav = torchaudio.transforms.Resample(orig_freq=sr, new_freq=args.sr)(wav)
+    # wav, sr = torchaudio.load(wav_root)
+    # # 取单声道, output shape [1, T]
+    # wav = wav[0].unsqueeze(0)
+    # # 重采样为模型的采样率
+    # wav = torchaudio.transforms.Resample(orig_freq=sr, new_freq=args.sr)(wav)
+
+    # load wav with librosa
+    wav, sr = librosa.load(wav_root, sr=args.sr)
+    wav = torch.tensor(wav).unsqueeze(0)
+
     # add batch axis
     wav = wav.unsqueeze(1).cuda()
+
     # compressing
-    compressed = soundstream.encode(wav, target_bw=12)
+    compressed = soundstream.encode(wav, target_bw=args.target_bw)
     print('finish compressing')
     out = soundstream.decode(compressed)
     out = out.detach().cpu().squeeze(0)
@@ -184,7 +177,8 @@ def test_batch():
         new_state_dict[name] = v
     soundstream.load_state_dict(new_state_dict)  # load model
     remove_encodec_weight_norm(soundstream)
-    soundstream = soundstream.cuda()
+    soundstream.cuda()
+    soundstream.eval()
     os.makedirs(args.output, exist_ok=True)
     for audio in input_lists:
         test_one(

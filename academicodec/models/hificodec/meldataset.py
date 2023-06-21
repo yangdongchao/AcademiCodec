@@ -7,10 +7,6 @@ import librosa
 import numpy as np
 import torch.utils.data
 from librosa.filters import mel as librosa_mel_fn
-from librosa.util import normalize
-from scipy.io.wavfile import read
-
-MAX_WAV_VALUE = 32768.0
 
 
 def load_wav(full_path, sr):
@@ -147,9 +143,6 @@ class MelDataset(torch.utils.data.Dataset):
             try:
                 # Note by yuantian: load with the sample_rate of config
                 audio, sampling_rate = load_wav(filename, sr=self.sampling_rate)
-                audio = audio / MAX_WAV_VALUE
-                if not self.fine_tuning:
-                    audio = normalize(audio) * 0.95
             except Exception as e:
                 print(f"Error on audio: {filename}")
                 audio = np.random.normal(size=(160000, )) * 0.05
