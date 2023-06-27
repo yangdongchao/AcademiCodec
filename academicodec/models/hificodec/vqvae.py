@@ -13,8 +13,7 @@ class VQVAE(nn.Module):
     def __init__(self,
                  config_path,
                  ckpt_path,
-                 with_encoder=False,
-                 return_acoustic_tokens_only=False):
+                 with_encoder=False):
         super(VQVAE, self).__init__()
         ckpt = torch.load(ckpt_path)
         with open(config_path) as f:
@@ -31,6 +30,7 @@ class VQVAE(nn.Module):
 
     def forward(self, x):
         # x is the codebook
+        # x.shape (B, T, Nq)
         quant_emb = self.quantizer.embed(x)
         return self.generator(quant_emb)
 
