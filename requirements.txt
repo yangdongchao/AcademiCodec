@@ -4,6 +4,5 @@ tensorboard
 libroso
 einops
 matplotlib
-matplotlib
 pyyaml
 tqdm
