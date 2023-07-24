@@ -5,7 +5,8 @@ log_root=logs
 train_data_dir=dump/train
 valid_data_dir=dump/valid
 
-python3 ${BIN_DIR}/main3_ddp.py \
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+python3 -m torch.distributed.launch --nproc_per_node 8 ${BIN_DIR}/main_launch.py \
         --BATCH_SIZE 16 \
         --N_EPOCHS 300 \
         --save_dir ${log_root} \
