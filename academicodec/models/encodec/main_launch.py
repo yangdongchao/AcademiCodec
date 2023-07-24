@@ -1,60 +1,43 @@
 import argparse
+import itertools
 import os
 import time
 
 import torch
 import torch.distributed as dist
 from academicodec.models.encodec.dataset import NSynthDataset
-from academicodec.models.encodec.distributed.launch import launch
 from academicodec.models.encodec.loss import criterion_d
 from academicodec.models.encodec.loss import criterion_g
 from academicodec.models.encodec.loss import loss_dis
 from academicodec.models.encodec.loss import loss_g
 from academicodec.models.encodec.msstftd import MultiScaleSTFTDiscriminator
 from academicodec.models.encodec.net3 import SoundStream
+from academicodec.models.soundstream.models import MultiPeriodDiscriminator
+from academicodec.models.soundstream.models import MultiScaleDiscriminator
 from academicodec.utils import Logger
 from academicodec.utils import seed_everything
 from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
 
-NODE_RANK = os.environ['INDEX'] if 'INDEX' in os.environ else 0
-NODE_RANK = int(NODE_RANK)
-MASTER_ADDR, MASTER_PORT = (os.environ['CHIEF_IP'],
-                            22275) if 'CHIEF_IP' in os.environ else (
-                                "127.0.0.1", 29500)
-MASTER_PORT = int(MASTER_PORT)
-DIST_URL = 'tcp://%s:%s' % (MASTER_ADDR, MASTER_PORT)
-NUM_NODE = os.environ['HOST_NUM'] if 'HOST_NUM' in os.environ else 1
+
+def getModelSize(model):
+    param_size = 0
+    param_sum = 0
+    for param in model.parameters():
+        param_size += param.nelement() * param.element_size()
+        param_sum += param.nelement()
+    buffer_size = 0
+    buffer_sum = 0
+    for buffer in model.buffers():
+        buffer_size += buffer.nelement() * buffer.element_size()
+        buffer_sum += buffer.nelement()
+    all_size = (param_size + buffer_size) / 1024 / 1024
+    print('模型总大小为：{:.3f}MB'.format(all_size))
+    return (param_size, param_sum, buffer_size, buffer_sum, all_size)
 
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--num_node',
-        type=int,
-        default=NUM_NODE,
-        help='number of nodes for distributed training')
-    parser.add_argument(
-        '--ngpus_per_node',
-        type=int,
-        default=8,
-        help='number of gpu on one node')
-    parser.add_argument(
-        '--node_rank',
-        type=int,
-        default=NODE_RANK,
-        help='node rank for distributed training')
-    parser.add_argument(
-        '--dist_url',
-        type=str,
-        default=DIST_URL,
-        help='url used to set up distributed training')
-    parser.add_argument(
-        '--gpu',
-        type=int,
-        default=None,
-        help='GPU id to use. If given, only the specific gpu will be'
-        ' used, and ddp will be disabled')
     parser.add_argument(
         '--local_rank',
         default=-1,
@@ -64,7 +47,7 @@ def get_args():
     parser.add_argument(
         '--seed',
         type=int,
-        default=None,
+        default=6666,
         help='seed for initializing training. ')
     parser.add_argument(
         '--cudnn_deterministic',
@@ -76,6 +59,11 @@ def get_args():
         help='use tensorboard for logging')
 
     # args for training
+    parser.add_argument(
+        '--LAMBDA_WAV',
+        type=float,
+        default=100,
+        help='hyper-parameter for wav time-domain loss')
     parser.add_argument(
         '--LAMBDA_ADV',
         type=float,
@@ -103,13 +91,10 @@ def get_args():
     parser.add_argument(
         '--global_step', type=int, default=0, help='record the global step')
     parser.add_argument('--discriminator_iter_start', type=int, default=500)
-    parser.add_argument('--BATCH_SIZE', type=int, default=2, help='batch size')
+    parser.add_argument('--BATCH_SIZE', type=int, default=10, help='batch size')
     parser.add_argument(
-        '--PATH',
-        type=str,
-        default='model_path/',
-        help='The path to save the model')
-    parser.add_argument('--sr', type=int, default=24000, help='sample rate')
+        '--PATH', type=str, default='model_path', help='model save path')
+    parser.add_argument('--sr', type=int, default=16000, help='sample rate')
     parser.add_argument(
         '--print_freq', type=int, default=10, help='the print number')
     parser.add_argument(
@@ -117,17 +102,19 @@ def get_args():
     parser.add_argument(
         '--train_data_path',
         type=str,
-        default='path_to_wavs',
+        # default='/apdcephfs_cq2/share_1297902/speech_user/shaunxliu/dongchao/code4/InstructTTS2/data_process/soundstream_data/train16k.lst', 
+        default="/apdcephfs_cq2/share_1297902/speech_user/shaunxliu/data/codec_data_24k/train_valid_lists/train.lst",
         help='training data')
     parser.add_argument(
         '--valid_data_path',
         type=str,
-        default='path_to_val_wavs',
-        help='training data')
+        # default='/apdcephfs_cq2/share_1297902/speech_user/shaunxliu/dongchao/code4/InstructTTS2/data_process/soundstream_data/val16k.lst', 
+        default="/apdcephfs_cq2/share_1297902/speech_user/shaunxliu/data/codec_data_24k/train_valid_lists/valid_256.lst",
+        help='validation data')
     parser.add_argument(
         '--resume', action='store_true', help='whether re-train model')
     parser.add_argument(
-        '--resume_path', type=str, default='path_to_resume', help='resume_path')
+        '--resume_path', type=str, default=None, help='resume_path')
     parser.add_argument(
         '--ratios',
         type=int,
@@ -143,7 +130,6 @@ def get_args():
         # default for 16k_320d
         default=[1, 1.5, 2, 4, 6, 12],
         help='target_bandwidths of net3.py')
-
     args = parser.parse_args()
     time_str = time.strftime('%Y-%m-%d-%H-%M')
     if args.resume:
@@ -164,54 +150,71 @@ def main():
     args = get_args()
     if args.seed is not None or args.cudnn_deterministic:
         seed_everything(args.seed, args.cudnn_deterministic)
-    if args.num_node == 1:
-        args.dist_url == "auto"
-    else:
-        assert args.num_node > 1
     args.ngpus_per_node = torch.cuda.device_count()
-    args.world_size = args.ngpus_per_node * args.num_node  #
-    launch(
-        main_worker,
-        args.ngpus_per_node,
-        args.num_node,
-        args.node_rank,
-        args.dist_url,
-        args=(args, ))
+    main_worker(args.local_rank, args)
 
 
 def main_worker(local_rank, args):
+    rank = local_rank
     args.local_rank = local_rank
-    args.global_rank = args.local_rank + args.node_rank * args.ngpus_per_node
-    args.distributed = args.world_size > 1
+    args.global_rank = local_rank
+    args.distributed = args.ngpus_per_node > 1
+
+    if args.ngpus_per_node > 1:
+        from torch.distributed import init_process_group
+        torch.cuda.set_device(local_rank)
+        init_process_group(backend='nccl')
+
     #CUDA_VISIBLE_DEVICES = int(args.local_rank)
     logger = Logger(args)
-    # 与 ../Encodec_16k_320/main3_ddp.py 仅有此处不同
-    # 32倍下采
     soundstream = SoundStream(
-        n_filters=32,
-        D=512,
+        n_filters=32, 
+        D=512, 
         ratios=args.ratios,
         sample_rate=args.sr,
         target_bandwidths=args.target_bandwidths)
+    msd = MultiScaleDiscriminator()
+    mpd = MultiPeriodDiscriminator()
     stft_disc = MultiScaleSTFTDiscriminator(filters=32)
+
+    if logger.is_primary:
+        getModelSize(soundstream)
+        getModelSize(msd)
+        getModelSize(mpd)
+        getModelSize(stft_disc)
+
     if args.distributed:
         soundstream = torch.nn.SyncBatchNorm.convert_sync_batchnorm(soundstream)
         stft_disc = torch.nn.SyncBatchNorm.convert_sync_batchnorm(stft_disc)
+        msd = torch.nn.SyncBatchNorm.convert_sync_batchnorm(msd)
+        mpd = torch.nn.SyncBatchNorm.convert_sync_batchnorm(mpd)
+
     # torch.distributed.barrier()
     args.device = torch.device('cuda', args.local_rank)
     soundstream.to(args.device)
     stft_disc.to(args.device)
+    msd.to(args.device)
+    mpd.to(args.device)
+    find_unused_parameters = False
     if args.distributed:
         soundstream = DDP(
             soundstream,
             device_ids=[args.local_rank],
-            find_unused_parameters=True
+            find_unused_parameters=find_unused_parameters
         )  # device_ids=[args.local_rank], output_device=args.local_rank
         stft_disc = DDP(stft_disc,
                         device_ids=[args.local_rank],
-                        find_unused_parameters=True)
-    # 这里之后需要看下 sr 的问题，如果输入 wav 的 sr 和 `--sr` 不一直则会有问题
+                        find_unused_parameters=find_unused_parameters)
+        msd = DDP(msd,
+                  device_ids=[args.local_rank],
+                  find_unused_parameters=find_unused_parameters)
+        mpd = DDP(mpd,
+                  device_ids=[args.local_rank],
+                  find_unused_parameters=find_unused_parameters)
+    # 这里之后需要看下 sr 的问题，如果输入 wav 的 sr 和 `--sr` 不一致则会有问题
+    logger.log_info('Training set')
     train_dataset = NSynthDataset(audio_dir=args.train_data_path)
+    logger.log_info('valid set')
     valid_dataset = NSynthDataset(audio_dir=args.valid_data_path)
     args.sr = train_dataset.sr
     if args.distributed:
@@ -232,12 +235,16 @@ def main_worker(local_rank, args):
         batch_size=args.BATCH_SIZE,
         num_workers=8,
         sampler=valid_sampler)
+    logger.log_info("Build optimizers and lr-schedulers")
     optimizer_g = torch.optim.AdamW(
         soundstream.parameters(), lr=3e-4, betas=(0.5, 0.9))
     lr_scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
         optimizer_g, gamma=0.999)
     optimizer_d = torch.optim.AdamW(
-        stft_disc.parameters(), lr=3e-4, betas=(0.5, 0.9))
+        itertools.chain(stft_disc.parameters(),
+                        msd.parameters(), mpd.parameters()),
+        lr=3e-4,
+        betas=(0.5, 0.9))
     lr_scheduler_d = torch.optim.lr_scheduler.ExponentialLR(
         optimizer_d, gamma=0.999)
     if args.resume:
@@ -245,22 +252,27 @@ def main_worker(local_rank, args):
         args.st_epoch = latest_info['epoch']
         soundstream.load_state_dict(latest_info['soundstream'])
         stft_disc.load_state_dict(latest_info['stft_disc'])
+        mpd.load_state_dict(latest_info['mpd'])
+        msd.load_state_dict(latest_info['msd'])
         optimizer_g.load_state_dict(latest_info['optimizer_g'])
         lr_scheduler_g.load_state_dict(latest_info['lr_scheduler_g'])
         optimizer_d.load_state_dict(latest_info['optimizer_d'])
         lr_scheduler_d.load_state_dict(latest_info['lr_scheduler_d'])
-    train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
-          optimizer_d, lr_scheduler_g, lr_scheduler_d, logger)
+    train(args, soundstream, stft_disc, msd, mpd, train_loader, valid_loader,
+          optimizer_g, optimizer_d, lr_scheduler_g, lr_scheduler_d, logger)
 
 
-def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
-          optimizer_d, lr_scheduler_g, lr_scheduler_d, logger):
+def train(args, soundstream, stft_disc, msd, mpd, train_loader, valid_loader,
+          optimizer_g, optimizer_d, lr_scheduler_g, lr_scheduler_d, logger):
+    print('args ', args.global_rank)
     best_val_loss = float("inf")
     best_val_epoch = -1
     global_step = 0
     for epoch in range(args.st_epoch, args.N_EPOCHS + 1):
         soundstream.train()
         stft_disc.train()
+        msd.train()
+        mpd.train()
         train_loss_d = 0.0
         train_adv_g_loss = 0.0
         train_feat_loss = 0.0
@@ -281,6 +293,10 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
                     # update generator
                     y_disc_r, fmap_r = stft_disc(x_wav.contiguous())
                     y_disc_gen, fmap_gen = stft_disc(G_x.contiguous())
+                    y_df_hat_r, y_df_hat_g, fmap_f_r, fmap_f_g = mpd(
+                        x_wav.contiguous(), G_x.contiguous())
+                    y_ds_hat_r, y_ds_hat_g, fmap_s_r, fmap_s_g = msd(
+                        x_wav.contiguous(), G_x.contiguous())
                     total_loss_g, rec_loss, adv_g_loss, feat_loss, d_weight = loss_g(
                         commit_loss,
                         x_wav,
@@ -290,10 +306,18 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
                         y_disc_r,
                         y_disc_gen,
                         global_step,
+                        y_df_hat_r,
+                        y_df_hat_g,
+                        y_ds_hat_r,
+                        y_ds_hat_g,
+                        fmap_f_r,
+                        fmap_f_g,
+                        fmap_s_r,
+                        fmap_s_g,
                         last_layer=last_layer,
                         is_training=True,
                         args=args)
-                    train_commit_loss += commit_loss
+                    train_commit_loss += commit_loss.item()
                     train_loss_g += total_loss_g.item()
                     train_adv_g_loss += adv_g_loss.item()
                     train_feat_loss += feat_loss.item()
@@ -305,13 +329,23 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
                     # update discriminator
                     y_disc_r_det, fmap_r_det = stft_disc(x.detach())
                     y_disc_gen_det, fmap_gen_det = stft_disc(G_x.detach())
-                    loss_d = loss_dis(y_disc_r_det, y_disc_gen_det, fmap_r_det,
-                                      fmap_gen_det, global_step, args)
+
+                    # MPD
+                    y_df_hat_r, y_df_hat_g, fmap_f_r, fmap_f_g = mpd(
+                        x.detach(), G_x.detach())
+                    #MSD
+                    y_ds_hat_r, y_ds_hat_g, fmap_s_r, fmap_s_g = msd(
+                        x.detach(), G_x.detach())
+
+                    loss_d = loss_dis(
+                        y_disc_r_det, y_disc_gen_det, fmap_r_det, fmap_gen_det,
+                        y_df_hat_r, y_df_hat_g, fmap_f_r, fmap_f_g, y_ds_hat_r,
+                        y_ds_hat_g, fmap_s_r, fmap_s_g, global_step, args)
                     train_loss_d += loss_d.item()
                     optimizer_d.zero_grad()
                     loss_d.backward()
                     optimizer_d.step()
-            message = '<epoch:{:d}, iter:{:d}, total_loss_g:{:.4f}, adv_g_loss:{:.4f}, feat_loss:{:.4f}, rec_loss:{:.4f}, commit_loss:{:.4f}, loss_d:{:.4f}>, d_weight: {:.4f}'.format(
+            message = '<epoch:{:d}, iter:{:d}, total_loss_g:{:.4f}, adv_g_loss:{:.4f}, feat_loss:{:.4f}, rec_loss:{:.4f}, commit_loss:{:.4f}, loss_d:{:.4f}, d_weight: {:.4f}>'.format(
                 epoch, k_iter,
                 total_loss_g.item(),
                 adv_g_loss.item(),
@@ -331,6 +365,8 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
         with torch.no_grad():
             soundstream.eval()
             stft_disc.eval()
+            mpd.eval()
+            msd.eval()
             valid_loss_d = 0.0
             valid_loss_g = 0.0
             valid_commit_loss = 0.0
@@ -348,6 +384,11 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
                         valid_commit_loss += commit_loss
                         y_disc_r, fmap_r = stft_disc(x_wav.contiguous())
                         y_disc_gen, fmap_gen = stft_disc(G_x.contiguous())
+                        y_df_hat_r, y_df_hat_g, fmap_f_r, fmap_f_g = mpd(
+                            x_wav.contiguous(), G_x.contiguous())
+                        y_ds_hat_r, y_ds_hat_g, fmap_s_r, fmap_s_g = msd(
+                            x_wav.contiguous(), G_x.contiguous())
+
                         total_loss_g, adv_g_loss, feat_loss, rec_loss = criterion_g(
                             commit_loss,
                             x_wav,
@@ -356,6 +397,14 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
                             fmap_gen,
                             y_disc_r,
                             y_disc_gen,
+                            y_df_hat_r,
+                            y_df_hat_g,
+                            fmap_f_r,
+                            fmap_f_g,
+                            y_ds_hat_r,
+                            y_ds_hat_g,
+                            fmap_s_r,
+                            fmap_s_g,
                             args=args)
                         valid_loss_g += total_loss_g.item()
                         valid_adv_g_loss += adv_g_loss.item()
@@ -366,13 +415,24 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
                             x_wav.contiguous().detach())
                         y_disc_gen_det, fmap_gen_det = stft_disc(
                             G_x.contiguous().detach())
+                        y_df_hat_r, y_df_hat_g, fmap_f_r, fmap_f_g = mpd(
+                            x_wav.contiguous().detach(),
+                            G_x.contiguous().detach())
+                        y_ds_hat_r, y_ds_hat_g, fmap_s_r, fmap_s_g = msd(
+                            x_wav.contiguous().detach(),
+                            G_x.contiguous().detach())
                         loss_d = criterion_d(y_disc_r_det, y_disc_gen_det,
-                                             fmap_r_det, fmap_gen_det)
+                                             fmap_r_det, fmap_gen_det,
+                                             y_df_hat_r, y_df_hat_g, fmap_f_r,
+                                             fmap_f_g, y_ds_hat_r, y_ds_hat_g,
+                                             fmap_s_r, fmap_s_g)
                         valid_loss_d += loss_d.item()
             if dist.get_rank() == 0:
                 best_model = soundstream.state_dict().copy()
                 latest_model_soundstream = soundstream.state_dict().copy()
                 latest_model_dis = stft_disc.state_dict().copy()
+                latest_mpd = mpd.state_dict().copy()
+                latest_msd = msd.state_dict().copy()
                 if valid_rec_loss < best_val_loss:
                     best_val_loss = valid_rec_loss
                     best_val_epoch = epoch
@@ -381,6 +441,8 @@ def train(args, soundstream, stft_disc, train_loader, valid_loader, optimizer_g,
                 latest_save = {}
                 latest_save['soundstream'] = latest_model_soundstream
                 latest_save['stft_disc'] = latest_model_dis
+                latest_save['mpd'] = latest_mpd
+                latest_save['msd'] = latest_msd
                 latest_save['epoch'] = epoch
                 latest_save['optimizer_g'] = optimizer_g.state_dict()
                 latest_save['optimizer_d'] = optimizer_d.state_dict()

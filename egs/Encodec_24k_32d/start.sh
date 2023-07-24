@@ -5,7 +5,7 @@ log_root=logs
 train_data_dir=dump/train
 valid_data_dir=dump/valid
 
-python3 ${BIN_DIR}/main3_ddp.py \
+python3 ${BIN_DIR}/main_launch.py \
         --BATCH_SIZE 16 \
         --N_EPOCHS 300 \
         --save_dir ${log_root} \
