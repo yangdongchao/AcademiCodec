@@ -1,11 +1,11 @@
-
-import os
-import glob
 import argparse
-from tqdm import tqdm
+import glob
+import os
+
+import scipy.signal as signal
 from pesq import pesq
 from scipy.io import wavfile
-import scipy.signal as signal
+from tqdm import tqdm
 
 
 def cal_pesq(ref_dir, deg_dir):
@@ -29,7 +29,7 @@ def cal_pesq(ref_dir, deg_dir):
         nb_pesq_scores += pesq(16000, ref, deg, 'nb')
         wb_pesq_scores += pesq(16000, ref, deg, 'wb')
 
-    return  nb_pesq_scores/len(input_files), wb_pesq_scores/len(input_files)
+    return nb_pesq_scores / len(input_files), wb_pesq_scores / len(input_files)
 
 
 if __name__ == '__main__':
@@ -37,17 +37,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Compute PESQ measure.")
 
     parser.add_argument(
-        '-r',
-        '--ref_dir',
-        required=True,
-        help="Reference wave folder."
-    )
+        '-r', '--ref_dir', required=True, help="Reference wave folder.")
     parser.add_argument(
-        '-d',
-        '--deg_dir',
-        required=True,
-        help="Degraded wave folder."
-    )
+        '-d', '--deg_dir', required=True, help="Degraded wave folder.")
 
     args = parser.parse_args()
 

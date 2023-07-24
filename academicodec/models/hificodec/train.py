@@ -60,6 +60,7 @@ def reconstruction_loss(x, G_x, device, eps=1e-7):
 
 
 def train(rank, a, h):
+    torch.cuda.set_device(rank)
     if h.num_gpus > 1:
         init_process_group(
             backend=h.dist_config['dist_backend'],
