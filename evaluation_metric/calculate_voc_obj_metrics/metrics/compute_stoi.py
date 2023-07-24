@@ -1,12 +1,11 @@
-
-import os
-import glob
 import argparse
+import glob
+import os
 
-from tqdm import tqdm
-from scipy.io import wavfile
-from pystoi import stoi
 import numpy as np
+from pystoi import stoi
+from scipy.io import wavfile
+from tqdm import tqdm
 
 
 def calculate_stoi(ref_dir, deg_dir):
@@ -29,21 +28,13 @@ def calculate_stoi(ref_dir, deg_dir):
 
 
 if __name__ == '__main__':
-    
+
     parser = argparse.ArgumentParser(description="Compute STOI measure")
 
     parser.add_argument(
-        '-r',
-        '--ref_dir',
-        required=True,
-        help="Reference wave folder."
-    )
+        '-r', '--ref_dir', required=True, help="Reference wave folder.")
     parser.add_argument(
-        '-d',
-        '--deg_dir',
-        required=True,
-        help="Degraded wave folder."
-    )
+        '-d', '--deg_dir', required=True, help="Degraded wave folder.")
 
     args = parser.parse_args()
 
