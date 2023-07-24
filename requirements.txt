@@ -1,7 +1,6 @@
-torch==1.13.0
-torchaudio==0.13.0
+torchaudio
 tensorboard
-librosa==0.9.1
+librosa
 einops
 matplotlib
 pyyaml
