@@ -1,6 +1,5 @@
 torchaudio
 tensorboard
-librosa
 einops
 matplotlib
 pyyaml
