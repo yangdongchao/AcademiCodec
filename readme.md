@@ -75,7 +75,15 @@ If you find this code useful in your research, please cite our work:
   year={2023}
 }
 ```
+```bibtex
+@article{yang2023hifi,
+  title={HiFi-Codec: Group-residual Vector quantization for High Fidelity Audio Codec},
+  author={Yang, Dongchao and Liu, Songxiang and Huang, Rongjie and Tian, Jinchuan and Weng, Chao and Zou, Yuexian},
+  journal={arXiv preprint arXiv:2305.02765},
+  year={2023}
+}
+```
 
 ## Disclaimer ##
-Note that part of the code is based on Encodec, so that the license should be the same as Encodec. All of our code and pre-trained models can be only used for Academic research (non-commercial).
+MIT license
 
