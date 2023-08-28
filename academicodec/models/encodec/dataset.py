@@ -4,6 +4,7 @@ import random
 import torch
 import torchaudio
 from torch.utils.data import Dataset
+from pathlib import Path
 
 
 class NSynthDataset(Dataset):
@@ -12,7 +13,10 @@ class NSynthDataset(Dataset):
     def __init__(self, audio_dir):
         super().__init__()
         self.filenames = []
-        self.filenames.extend(glob.glob(audio_dir + "/*.wav"))
+        for sub_dir in audio_dir:
+            print(sub_dir)
+            self.filenames.extend(list(Path(sub_dir).glob("**/*.wav")))
+            
         print(len(self.filenames))
         _, self.sr = torchaudio.load(self.filenames[0])
         self.max_len = 24000  # 24000
