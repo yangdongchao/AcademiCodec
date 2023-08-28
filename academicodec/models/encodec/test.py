@@ -182,15 +182,7 @@ def test_batch():
         ratios=args.ratios,
         sample_rate=args.sr,
         target_bandwidths=args.target_bandwidths)
-    parameter_dict = torch.load(args.resume_path)
-    #TODO: 保存模型是对于多卡，可以保存model.module.state_dict(), 单卡model.state_dict()这样加载时就不需要这部分了
-    new_state_dict = OrderedDict()
-    # k 为 module.xxx.weight, v 为权重
-    for k, v in parameter_dict.items():
-        # 截取`module.`后面的xxx.weight
-        name = k[7:]
-        new_state_dict[name] = v
-    soundstream.load_state_dict(new_state_dict)  # load model
+    soundstream.load_state_dict(torch.load(args.resume_path))  # load model
     remove_encodec_weight_norm(soundstream)
     soundstream.cuda()
     soundstream.eval()
