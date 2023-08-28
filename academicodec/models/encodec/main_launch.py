@@ -102,12 +102,14 @@ def get_args():
     parser.add_argument(
         '--train_data_path',
         type=str,
+        nargs='*',
         # default='/apdcephfs_cq2/share_1297902/speech_user/shaunxliu/dongchao/code4/InstructTTS2/data_process/soundstream_data/train16k.lst', 
         default="/apdcephfs_cq2/share_1297902/speech_user/shaunxliu/data/codec_data_24k/train_valid_lists/train.lst",
         help='training data')
     parser.add_argument(
         '--valid_data_path',
         type=str,
+        nargs='*',
         # default='/apdcephfs_cq2/share_1297902/speech_user/shaunxliu/dongchao/code4/InstructTTS2/data_process/soundstream_data/val16k.lst', 
         default="/apdcephfs_cq2/share_1297902/speech_user/shaunxliu/data/codec_data_24k/train_valid_lists/valid_256.lst",
         help='validation data')
@@ -130,6 +132,12 @@ def get_args():
         # default for 16k_320d
         default=[1, 1.5, 2, 4, 6, 12],
         help='target_bandwidths of net3.py')
+    parser.add_argument(
+        '--lr',
+        type=float,
+        default=3e-4,
+        help="learning rate"
+    )
     args = parser.parse_args()
     time_str = time.strftime('%Y-%m-%d-%H-%M')
     if args.resume:
@@ -237,13 +245,13 @@ def main_worker(local_rank, args):
         sampler=valid_sampler)
     logger.log_info("Build optimizers and lr-schedulers")
     optimizer_g = torch.optim.AdamW(
-        soundstream.parameters(), lr=3e-4, betas=(0.5, 0.9))
+        soundstream.parameters(), lr=args.lr, betas=(0.5, 0.9))
     lr_scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
         optimizer_g, gamma=0.999)
     optimizer_d = torch.optim.AdamW(
         itertools.chain(stft_disc.parameters(),
                         msd.parameters(), mpd.parameters()),
-        lr=3e-4,
+        lr=args.lr,
         betas=(0.5, 0.9))
     lr_scheduler_d = torch.optim.lr_scheduler.ExponentialLR(
         optimizer_d, gamma=0.999)
@@ -273,12 +281,12 @@ def train(args, soundstream, stft_disc, msd, mpd, train_loader, valid_loader,
         stft_disc.train()
         msd.train()
         mpd.train()
-        train_loss_d = 0.0
-        train_adv_g_loss = 0.0
-        train_feat_loss = 0.0
-        train_rec_loss = 0.0
-        train_loss_g = 0.0
-        train_commit_loss = 0.0
+        train_loss_d = 0.0 # hinge-loss adversarial loss function
+        train_adv_g_loss = 0.0 # adversarial loss for the generator
+        train_feat_loss = 0.0 # a relative feature matching loss for the generator
+        train_rec_loss = 0.0 # l_t and l_f
+        train_loss_g = 0.0 # loss generation
+        train_commit_loss = 0.0 # RVQ commit loss
         k_iter = 0
         if args.distributed:
             train_loader.sampler.set_epoch(epoch)
@@ -427,12 +435,12 @@ def train(args, soundstream, stft_disc, msd, mpd, train_loader, valid_loader,
                                              fmap_f_g, y_ds_hat_r, y_ds_hat_g,
                                              fmap_s_r, fmap_s_g)
                         valid_loss_d += loss_d.item()
-            if dist.get_rank() == 0:
-                best_model = soundstream.state_dict().copy()
-                latest_model_soundstream = soundstream.state_dict().copy()
-                latest_model_dis = stft_disc.state_dict().copy()
-                latest_mpd = mpd.state_dict().copy()
-                latest_msd = msd.state_dict().copy()
+            if not args.distributed or dist.get_rank() == 0:
+                best_model = soundstream.module.state_dict().copy() if args.distributed else soundstream.state_dict().copy()
+                latest_model_soundstream = soundstream.module.state_dict().copy() if args.distributed else soundstream.state_dict().copy()
+                latest_model_dis = stft_disc.module.state_dict().copy() if args.distributed else stft_disc.state_dict().copy()
+                latest_mpd = mpd.module.state_dict().copy() if args.distributed else mpd.state_dict().copy()
+                latest_msd = msd.module.state_dict().copy() if args.distributed else msd.state_dict().copy()
                 if valid_rec_loss < best_val_loss:
                     best_val_loss = valid_rec_loss
                     best_val_epoch = epoch
