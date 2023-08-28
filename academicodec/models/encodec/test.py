@@ -121,7 +121,6 @@ def test_one(args, wav_root, store_root, rescale, soundstream):
     # wav = wav[0].unsqueeze(0)
     # # 重采样为模型的采样率
     # wav = torchaudio.transforms.Resample(orig_freq=sr, new_freq=args.sr)(wav)
-
     # load wav with librosa
     wav, sr = librosa.load(wav_root, sr=args.sr)
     wav = torch.tensor(wav).unsqueeze(0)
@@ -195,7 +194,9 @@ def test_batch():
     remove_encodec_weight_norm(soundstream)
     soundstream.cuda()
     soundstream.eval()
-    check_output_exists(args)
+    if not args.output.exists():
+        args.output.mkdirs(parents=True)
+    check_output_exists(args) 
     for audio in input_lists:
         test_one(
             args=args,
