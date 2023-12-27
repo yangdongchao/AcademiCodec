@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree.
 """Command-line for audio compression."""
 import argparse
-import os
 import sys
 import typing as tp
 from collections import OrderedDict
@@ -65,6 +64,9 @@ def get_parser():
         help='ratios of SoundStream, shoud be set for different hop_size (32d, 320, 240d, ...)'
     )
     parser.add_argument(
+        '-f', '--force', action='store_true',
+        help='Overwrite output file if it exists.')
+    parser.add_argument(
         '--target_bandwidths',
         type=float,
         nargs='+',
@@ -77,6 +79,14 @@ def get_parser():
         # default for 16k_320d
         default=12,
         help='target_bw of net3.py')
+    parser.add_argument(
+        '--ext',
+        type=str,
+        # default for 16k_320d
+        default="wav",
+        help='audio extension',
+        choices=["wav","flac","mp3"])
+
 
     return parser
 
@@ -85,6 +95,11 @@ def fatal(*args):
     print(*args, file=sys.stderr)
     sys.exit(1)
 
+def check_output_exists(args):
+    if not args.output.parent.exists():
+        fatal(f"Output folder for {args.output} does not exist.")
+    if args.output.exists() and not args.force:
+        fatal(f"Output file {args.output} exist. Use -f / --force to overwrite.")
 
 # 这只是打印了但是没有真的 clip
 def check_clipping(wav, rescale):
@@ -106,7 +121,6 @@ def test_one(args, wav_root, store_root, rescale, soundstream):
     # wav = wav[0].unsqueeze(0)
     # # 重采样为模型的采样率
     # wav = torchaudio.transforms.Resample(orig_freq=sr, new_freq=args.sr)(wav)
-
     # load wav with librosa
     wav, sr = librosa.load(wav_root, sr=args.sr)
     wav = torch.tensor(wav).unsqueeze(0)
@@ -160,7 +174,7 @@ def test_batch():
     print("args.target_bandwidths:", args.target_bandwidths)
     if not args.input.exists():
         fatal(f"Input file {args.input} does not exist.")
-    input_lists = os.listdir(args.input)
+    input_lists = list(args.input.glob(f"**/*.{args.ext}"))
     input_lists.sort()
     soundstream = SoundStream(
         n_filters=32,
@@ -168,23 +182,18 @@ def test_batch():
         ratios=args.ratios,
         sample_rate=args.sr,
         target_bandwidths=args.target_bandwidths)
-    parameter_dict = torch.load(args.resume_path)
-    new_state_dict = OrderedDict()
-    # k 为 module.xxx.weight, v 为权重
-    for k, v in parameter_dict.items():
-        # 截取`module.`后面的xxx.weight
-        name = k[7:]
-        new_state_dict[name] = v
-    soundstream.load_state_dict(new_state_dict)  # load model
+    soundstream.load_state_dict(torch.load(args.resume_path))  # load model
     remove_encodec_weight_norm(soundstream)
     soundstream.cuda()
     soundstream.eval()
-    os.makedirs(args.output, exist_ok=True)
+    if not args.output.exists():
+        args.output.mkdirs(parents=True)
+    check_output_exists(args) 
     for audio in input_lists:
         test_one(
             args=args,
-            wav_root=os.path.join(args.input, audio),
-            store_root=os.path.join(args.output, audio),
+            wav_root=args.input.joinpath(audio.name),
+            store_root=args.output.joinpath(audio.name),
             rescale=args.rescale,
             soundstream=soundstream)
 
