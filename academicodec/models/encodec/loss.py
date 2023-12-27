@@ -69,16 +69,18 @@ def reconstruction_loss(x, G_x, args, eps=1e-7):
         s = 2**i
         melspec = MelSpectrogram(
             sample_rate=args.sr,
-            n_fft=s,
+            n_fft=max(s, 512),
+            win_length=s,
             hop_length=s // 4,
             n_mels=64,
             wkwargs={"device": args.device}).to(args.device)
         S_x = melspec(x)
         S_G_x = melspec(G_x)
-        loss = ((S_x - S_G_x).abs().mean() + (
-            ((torch.log(S_x.abs() + eps) - torch.log(S_G_x.abs() + eps))**2
-             ).mean(dim=-2)**0.5).mean()) / i
-        L += loss
+        l1_loss = (S_x - S_G_x).abs().mean()
+        l2_loss = (((torch.log(S_x.abs() + eps) - torch.log(S_G_x.abs() + eps))**2).mean(dim=-2)**0.5).mean()
+
+        alpha = (s / 2) ** 0.5
+        L += (l1_loss + alpha * l2_loss)
     return L
 
 
